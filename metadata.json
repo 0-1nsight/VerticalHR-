@@ -1,0 +1,6 @@
+{
+  "name": "VerticalHRM",
+  "description": "Human Resource Management System for employee administration, leave requests, performance reviews, and organizational structure.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
