@@ -45,6 +45,13 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({ employee, onClose, o
       salary: employee?.jobInfo.salary || 0,
     },
     documents: employee?.documents || [],
+    jobHistory: employee?.jobHistory || [],
+    qualifications: employee?.qualifications || [],
+    vettingStatus: employee?.vettingStatus || {
+      backgroundCheckCompleted: false,
+      policeRecordCheck: false,
+      referenceChecks: [],
+    },
   });
 
   const tabs = [

@@ -13,12 +13,17 @@ import {
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { PerformanceReview, PerformanceGoal, CompetencyRating } from '../../types';
+import { PerformanceReview, PerformanceGoal, CompetencyRating, Employee, UserRole } from '../../types';
 
 interface PerformanceReviewFormModalProps {
   review?: PerformanceReview | null;
   onClose: () => void;
   onSuccess?: () => void;
+  employee?: Employee;
+  isOpen?: boolean;
+  onSave?: (updated: PerformanceReview) => void;
+  currentUserRole?: UserRole;
+  currentUserId?: string;
 }
 
 const defaultCompetenciesList = [

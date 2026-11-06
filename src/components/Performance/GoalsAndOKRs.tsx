@@ -4,13 +4,15 @@ import {
   Plus, 
   Calendar, 
   User, 
-  X,
-  Edit2,
-  Trash2
+  X, 
+  Edit2, 
+  Trash2,
+  GitFork
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { GoalRecord } from '../../types';
+import { calculateWeightedOkrProgress } from '../../services/talentEngine';
 
 export const GoalsAndOKRs: React.FC = () => {
   const { goals, employees, departments, addGoal, updateGoal, deleteGoal } = useData();
@@ -130,6 +132,18 @@ export const GoalsAndOKRs: React.FC = () => {
     return emp ? `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}` : 'Unassigned';
   };
 
+  const okrItems = filteredGoals.map((g) => ({
+    id: g.id,
+    tenantId: 'tenant-001',
+    level: g.category as 'company' | 'department' | 'individual',
+    title: g.title,
+    metricTarget: 100,
+    metricCurrent: g.progress,
+    weightPercentage: filteredGoals.length > 0 ? Math.round((100 / filteredGoals.length) * 10) / 10 : 0,
+    status: g.status,
+  }));
+  const okrRollup = calculateWeightedOkrProgress(okrItems);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -167,6 +181,35 @@ export const GoalsAndOKRs: React.FC = () => {
             {cat.label}
           </button>
         ))}
+      </div>
+
+      {/* Cascading Alignment & Weighted Rollup Summary */}
+      <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <GitFork className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Cascading Alignment & Mathematical Weighting</h3>
+            <p className="text-xs text-gray-500">Corporate Vision &rarr; Department Milestones &rarr; Contributor Key Results</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500">Total Objective Weight:</span>
+            <span className={`font-mono font-bold px-2 py-0.5 rounded ${okrRollup.isValidWeighting ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+              {okrRollup.totalWeight}% {okrRollup.isValidWeighting ? '(100% Balanced)' : '(Rebalancing Recommended)'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500">Weighted Progress:</span>
+            <span className="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+              {okrRollup.overallWeightedProgress}% Achieved
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Objectives Grid */}

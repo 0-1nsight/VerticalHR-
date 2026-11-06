@@ -17,6 +17,7 @@ export interface User {
 export interface Employee {
   id: string;
   employeeId: string;
+  email?: string;
   personalInfo: {
     firstName: string;
     lastName: string;
@@ -41,11 +42,12 @@ export interface Employee {
     jobTitle: string;
     department: string;
     reportingManager: string;
+    reportsTo?: string;
     supervisorId?: string;
     employmentStatus: 'active' | 'inactive' | 'terminated' | 'resigned';
     hireDate: string;
     workLocation: string;
-    employmentType: 'full_time' | 'part_time' | 'contract';
+    employmentType: 'full_time' | 'part_time' | 'contract' | 'intern';
     salary: number;
   };
   jobHistory: JobHistoryEntry[];
@@ -114,8 +116,9 @@ export interface ProfileChangeRequest {
   requestType: 'personal_info' | 'contact_info' | 'emergency_contact' | 'bank_info';
   currentData: Record<string, unknown>;
   proposedData: Record<string, unknown>;
+  changeData?: Record<string, unknown>;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'supervisor_approved' | 'hr_approved';
   reviewedBy?: string;
   reviewedAt?: string;
   reviewComments?: string;
@@ -188,6 +191,7 @@ export interface LeaveType {
   id: string;
   name: string;
   allowance: number;
+  daysAllowed?: number;
   carryOver: boolean;
   carryOverLimit?: number;
   accrualRate: number;
@@ -204,7 +208,8 @@ export interface LeaveRequest {
   endDate: string;
   days: number;
   reason: string;
-  status: 'pending' | 'supervisor_approved' | 'hr_approved' | 'rejected';
+  status: 'pending' | 'supervisor_approved' | 'hr_approved' | 'rejected' | 'approved';
+  approverComments?: string;
   supervisorApproval?: ApprovalStep;
   hrApproval?: ApprovalStep;
   createdAt: string;
@@ -241,7 +246,7 @@ export interface PerformanceReview {
   selfAssessment?: PerformanceAssessment;
   supervisorAssessment?: PerformanceAssessment;
   overallScore?: number;
-  status: 'draft' | 'employee_submitted' | 'supervisor_review' | 'completed';
+  status: 'draft' | 'employee_submitted' | 'supervisor_review' | 'in_progress' | 'completed';
   goals: PerformanceGoal[];
   competencies: CompetencyRating[];
   developmentPlan?: string;
@@ -377,6 +382,7 @@ export interface Document {
   type: string;
   size: number;
   uploadDate: string;
+  isCompanyWide?: boolean;
   category: 'qualification' | 'certification' | 'photo' | 'identity' | 'fica_proof_of_address' | 'fica_id' | 'fica_bank_statement' | 'tax_document' | 'contract' | 'performance' | 'personal' | 'vetting' | 'policy' | 'other';
   uploadedBy: string;
   isConfidential: boolean;
@@ -590,8 +596,8 @@ export interface AuditLogEntry {
   actorId: string;
   actorName: string;
   actorRole: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'EXPORT' | 'LOGIN' | 'DELEGATE';
-  entity: 'Employee' | 'LeaveRequest' | 'Salary' | 'Document' | 'FicaRecord' | 'JobPosting' | 'Promotion' | 'Workflow' | 'Setting';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'EXPORT' | 'LOGIN' | 'DELEGATE' | 'SIGN' | string;
+  entity: 'Employee' | 'LeaveRequest' | 'Salary' | 'Document' | 'FicaRecord' | 'JobPosting' | 'Promotion' | 'Workflow' | 'Setting' | 'EMPLOYEE_PROFILE' | 'PROFILE_CHANGE_REQUEST' | 'DOCUMENT' | string;
   entityId: string;
   entityDescription: string;
   previousValue?: string;
@@ -613,11 +619,20 @@ export interface WorkflowApprovalItem {
   totalSteps: number;
   currentApproverRole: UserRole;
   currentApproverId?: string;
+  assignedRole?: UserRole;
+  assignedTo?: string;
   status: 'pending' | 'approved' | 'rejected' | 'delegated';
   urgency: 'low' | 'normal' | 'high';
   submittedAt: string;
   dueDate: string;
   details: Record<string, unknown>;
+  history?: {
+    step: number;
+    approverName: string;
+    action: string;
+    comments?: string;
+    timestamp: string;
+  }[];
   auditTrail: {
     step: number;
     approverName: string;

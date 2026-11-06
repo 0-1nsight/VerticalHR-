@@ -327,7 +327,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <div>
                       <p className="text-sm font-semibold text-slate-900">Personal Information Update</p>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Changes to: {Object.keys(req.changeData).join(', ')}
+                        Changes to: {Object.keys(req.changeData || req.proposedData || {}).join(', ')}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-1">
                         Submitted: {new Date(req.createdAt).toLocaleDateString()}

@@ -2751,13 +2751,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('hrm_documents', JSON.stringify(updated));
 
     addAuditLog({
+      actorId: signerName,
+      actorName: signerName,
+      actorRole: 'employee',
       action: 'SIGN',
-      entity: 'DOCUMENT',
+      entity: 'Document',
       entityId: documentId,
-      actor: signerName,
-      details: `Electronically reviewed and signed document '${documents.find(d => d.id === documentId)?.name || documentId}'`,
-      previousState: { signed: false },
-      newState: { signed: true, signedByName: signerName, signedAt: new Date().toISOString() }
+      entityDescription: `Electronically reviewed and signed document '${documents.find(d => d.id === documentId)?.name || documentId}'`,
+      previousValue: 'signed: false',
+      newValue: `signed: true, signedByName: ${signerName}`,
+      ipAddress: '127.0.0.1'
     });
   };
 
@@ -2785,13 +2788,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bankInfo: updateData.bankInfo || emp.bankInfo
       });
       addAuditLog({
+        actorId: emp.employeeId,
+        actorName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+        actorRole: 'employee',
         action: 'UPDATE',
-        entity: 'EMPLOYEE_PROFILE',
+        entity: 'Employee',
         entityId: employeeId,
-        actor: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-        details: 'Updated personal contact details via Employee Self-Service',
-        previousState: { phone: emp.personalInfo.phone, address: emp.personalInfo.address },
-        newState: updateData
+        entityDescription: 'Updated personal contact details via Employee Self-Service',
+        previousValue: JSON.stringify({ phone: emp.personalInfo.phone, address: emp.personalInfo.address }),
+        newValue: JSON.stringify(updateData),
+        ipAddress: '127.0.0.1'
       });
     } else {
       const newReq: ProfileChangeRequest = {
@@ -2815,6 +2821,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const newApproval: WorkflowApprovalItem = {
         id: `wf-pcr-${Date.now()}`,
+        tenantId: currentTenant.id,
         title: `Profile Information Change: ${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
         type: 'profile_change',
         requesterId: emp.employeeId,
@@ -2822,20 +2829,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         department: emp.jobInfo.department,
         currentStep: 1,
         totalSteps: 2,
+        currentApproverRole: 'line_manager',
+        currentApproverId: emp.jobInfo.reportingManager,
         assignedRole: 'line_manager',
         assignedTo: emp.jobInfo.reportingManager,
         status: 'pending',
-        priority: 'medium',
+        urgency: 'normal',
         submittedAt: new Date().toISOString(),
-        payload: {
+        dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+        details: {
           proposedData: updateData,
           reason: 'Employee self-service profile update'
         },
+        auditTrail: [{
+          step: 1,
+          approverName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+          action: 'submitted',
+          timestamp: new Date().toISOString(),
+          comments: 'Submitted update request for approval'
+        }],
         history: [{
           step: 1,
-          role: 'Employee Self-Service',
-          action: 'submit',
-          actor: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+          approverName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+          action: 'submitted',
           timestamp: new Date().toISOString(),
           comments: 'Submitted update request for approval'
         }]
@@ -2844,13 +2860,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('hrm_workflow_approvals', JSON.stringify([newApproval, ...workflowApprovals]));
 
       addAuditLog({
+        actorId: emp.employeeId,
+        actorName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+        actorRole: 'employee',
         action: 'CREATE',
-        entity: 'PROFILE_CHANGE_REQUEST',
+        entity: 'Workflow',
         entityId: newReq.id,
-        actor: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-        details: 'Submitted profile change request for managerial and HR approval',
-        previousState: null,
-        newState: updateData
+        entityDescription: 'Submitted profile change request for managerial and HR approval',
+        previousValue: undefined,
+        newValue: JSON.stringify(updateData),
+        ipAddress: '127.0.0.1'
       });
     }
   };
@@ -3366,6 +3385,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const bulkImportEmployees = (importedEmployees: Record<string, string>[]): { successCount: number; errors: string[] } => {
     const errors: string[] = [];
+    const validToAdd: Employee[] = [];
     const existingEmails = new Set(employees.map(e => e.personalInfo.email.toLowerCase()));
     const existingEmpIds = new Set(employees.map(e => e.employeeId.toUpperCase()));
 

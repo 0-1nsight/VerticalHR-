@@ -9,7 +9,8 @@ import {
   Eye,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Users
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';

@@ -133,11 +133,14 @@ export const EmployeeSelfServicePortal: React.FC = () => {
     addHRCase({
       employeeId: employee.employeeId,
       employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+      department: employee.jobInfo.department,
       subject: caseSubject,
       category: caseCategory,
       priority: casePriority,
-      status: 'open',
-      description: caseDescription
+      status: 'new',
+      description: caseDescription,
+      slaDueAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+      assignedTo: 'HR Support'
     });
     setUpdateSuccessMsg('Official HR inquiry submitted to Helpdesk. Tracking ticket generated.');
     setShowNewRequestModal(false);
@@ -710,7 +713,7 @@ export const EmployeeSelfServicePortal: React.FC = () => {
                   {auditSteps.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-100 space-y-1 text-xs text-gray-600">
                       <span className="font-semibold text-gray-700">Approval & Audit Trail:</span>
-                      {auditSteps.map((h, i: number) => {
+                      {auditSteps.map((h: { step?: number; approverName?: string; actor?: string; action: string; comments?: string; timestamp: string }, i: number) => {
                         const stepActor = 'actor' in h ? h.actor : 'approverName' in h ? h.approverName : 'Reviewer';
                         return (
                           <div key={i} className="flex items-center gap-2 text-gray-500">
