@@ -30,6 +30,8 @@ import { HiringOnboardingHub } from './components/Recruitment/HiringOnboardingHu
 import { PayrollReadyExport } from './components/Payroll/PayrollReadyExport';
 import { AuditTrailViewer } from './components/Audit/AuditTrailViewer';
 import { HRCasesHelpdesk } from './components/Helpdesk/HRCasesHelpdesk';
+import { BillingAndIntegrations } from './components/Platform/BillingAndIntegrations';
+import { LaunchReadinessHub } from './components/Launch/LaunchReadinessHub';
 import { useData } from './contexts/DataContext';
 import { Employee } from './types';
 
@@ -152,6 +154,11 @@ function App() {
         return <SystemSettingsManager />;
       case 'strategic-guide':
         return <StrategicHRGuide />;
+      case 'billing-platform':
+      case 'ai-policy-assistant':
+        return <BillingAndIntegrations />;
+      case 'launch-readiness':
+        return <LaunchReadinessHub />;
       default:
         return (
           <div className="flex items-center justify-center h-full p-12">

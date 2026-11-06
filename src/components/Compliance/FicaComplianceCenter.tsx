@@ -16,17 +16,29 @@ import {
   AlertCircle,
   FileCheck,
   Check,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { FicaComplianceRecord, FicaRequirement, Document } from '../../types';
+import { FicaComplianceRecord, FicaRequirement, Document, Employee } from '../../types';
+import {
+  calculateComplianceRiskScore,
+  validateVerificationSegregation,
+  screenAgainstSanctionsWatchlist,
+  adjudicateScreeningHit,
+  generateRegulatorEvidencePack,
+  ScreeningResult,
+  AdjudicatedRecord,
+  ComplianceRiskResult
+} from '../../services/complianceEngine';
 
 export const FicaComplianceCenter: React.FC = () => {
   const { ficaRecords, employees, updateFicaRecord, verifyFicaRequirement, submitFicaRequirementDocument, addDocument } = useData();
   const { user } = useAuth();
 
-  const isComplianceOfficer = user?.role === 'admin' || user?.role === 'hr_manager';
+  const isComplianceOfficer = user?.role === 'super_admin' || user?.role === 'hr_admin' || user?.role === 'admin' || user?.role === 'hr_manager' || user?.role === 'auditor';
   const officerName = user ? `${user.firstName} ${user.lastName}` : 'Compliance Officer';
 
   // Filters
@@ -43,6 +55,16 @@ export const FicaComplianceCenter: React.FC = () => {
   const [reviewStatus, setReviewStatus] = useState<'compliant' | 'rejected'>('compliant');
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewExpiry, setReviewExpiry] = useState('');
+
+  // Phase 7: Real Sanctions Screening & False-Positive Adjudication Modal
+  const [screeningTarget, setScreeningTarget] = useState<{ emp: Employee; result: ScreeningResult } | null>(null);
+  const [adjudicationDecision, setAdjudicationDecision] = useState<'false_positive' | 'confirmed_match'>('false_positive');
+  const [adjudicationRationale, setAdjudicationRationale] = useState('');
+  const [adjudicationDocRef, setAdjudicationDocRef] = useState('');
+  const [adjudicationsHistory, setAdjudicationsHistory] = useState<Record<string, AdjudicatedRecord[]>>({});
+
+  // Phase 7: Explainable Risk Rating Breakdown Modal
+  const [riskExplanation, setRiskExplanation] = useState<{ emp: Employee; result: ComplianceRiskResult } | null>(null);
 
   // Quick Document Upload Modal for requirement
   const [uploadReq, setUploadReq] = useState<{ empId: string; req: FicaRequirement } | null>(null);
@@ -215,6 +237,14 @@ export const FicaComplianceCenter: React.FC = () => {
     e.preventDefault();
     if (!reviewReq) return;
 
+    // Phase 7 Strict Segregation of Duties: Uploader cannot verify
+    const uploader = reviewReq.req.uploadedBy || 'Employee';
+    const sodCheck = validateVerificationSegregation(uploader, officerName);
+    if (!sodCheck.allowed && reviewStatus === 'compliant') {
+      alert(`Segregation of Duties Violation:\n${sodCheck.reason}`);
+      return;
+    }
+
     verifyFicaRequirement(
       reviewReq.empId,
       reviewReq.req.id,
@@ -230,13 +260,138 @@ export const FicaComplianceCenter: React.FC = () => {
   };
 
   const handleRunSanctionsScreening = (empId: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    updateFicaRecord(empId, {
-      sanctionScreeningPassed: true,
-      sanctionScreeningDate: today,
-      lastAuditedAt: today,
-      auditedBy: officerName
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+
+    const fullName = `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`;
+    const screening = screenAgainstSanctionsWatchlist(fullName);
+
+    if (screening.hasMatch) {
+      setScreeningTarget({ emp, result: screening });
+      setAdjudicationDecision('false_positive');
+      setAdjudicationRationale('');
+      setAdjudicationDocRef(`ID-VERIFY-${emp.employeeId}.pdf`);
+    } else {
+      const today = new Date().toISOString().split('T')[0];
+      updateFicaRecord(empId, {
+        sanctionScreeningPassed: true,
+        sanctionScreeningDate: today,
+        lastAuditedAt: today,
+        auditedBy: officerName
+      });
+      alert(`Clean Screening: ${fullName} verified against OFAC, UN, and FID sanctions databases with 0 hits.`);
+    }
+  };
+
+  const handleResolveAdjudication = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!screeningTarget) return;
+
+    const adjudicated = adjudicateScreeningHit({
+      eventId: `scr-${Date.now()}`,
+      employeeId: screeningTarget.emp.id,
+      officerUserId: user?.id || 'officer',
+      officerName,
+      decision: adjudicationDecision,
+      rationale: adjudicationRationale || 'Verified official identification and confirmed distinct individual.',
+      supportingDocumentRef: adjudicationDocRef || `PROOF-${screeningTarget.emp.employeeId}.pdf`
     });
+
+    setAdjudicationsHistory(prev => ({
+      ...prev,
+      [screeningTarget.emp.id]: [...(prev[screeningTarget.emp.id] || []), adjudicated]
+    }));
+
+    const today = new Date().toISOString().split('T')[0];
+    if (adjudicationDecision === 'false_positive') {
+      updateFicaRecord(screeningTarget.emp.id, {
+        sanctionScreeningPassed: true,
+        sanctionScreeningDate: today,
+        lastAuditedAt: today,
+        auditedBy: officerName
+      });
+    } else {
+      updateFicaRecord(screeningTarget.emp.id, {
+        sanctionScreeningPassed: false,
+        sanctionScreeningDate: today,
+        status: 'action_required',
+        riskRating: 'high',
+        lastAuditedAt: today,
+        auditedBy: officerName
+      });
+    }
+
+    setScreeningTarget(null);
+    setAdjudicationRationale('');
+  };
+
+  const handleViewRiskBreakdown = (emp: Employee, record: FicaComplianceRecord) => {
+    const addressInfo = getAddressExpiryInfo(record);
+    const hasValidId = record.requirements.some(r => r.type === 'id_document' && r.status === 'compliant');
+    const hasCriminalClearance = record.requirements.some(r => r.type === 'criminal_record' && r.status === 'compliant');
+
+    let roleCategory: 'executive' | 'treasury_finance' | 'operations' | 'general_staff' = 'general_staff';
+    const dept = emp.jobInfo.department.toLowerCase();
+    const title = emp.jobInfo.jobTitle.toLowerCase();
+    if (dept.includes('executive') || title.includes('chief') || title.includes('vp') || title.includes('director')) {
+      roleCategory = 'executive';
+    } else if (dept.includes('finance') || title.includes('treasury') || title.includes('accountant') || title.includes('payroll')) {
+      roleCategory = 'treasury_finance';
+    } else if (dept.includes('compliance') || dept.includes('operations')) {
+      roleCategory = 'operations';
+    }
+
+    const evaluation = calculateComplianceRiskScore({
+      roleCategory,
+      isPep: record.isPep,
+      pepTier: record.isPep ? 2 : undefined,
+      sanctionsMatchStatus: record.sanctionScreeningPassed ? 'resolved_false_positive' : 'none',
+      addressDaysRemaining: addressInfo.daysLeft,
+      hasValidId,
+      hasCriminalClearance,
+      adverseMediaFlag: false
+    });
+
+    setRiskExplanation({ emp, result: evaluation });
+  };
+
+  const handleDownloadRegulatorEvidencePack = (record: FicaComplianceRecord, emp: Employee) => {
+    const addressInfo = getAddressExpiryInfo(record);
+    const riskEval = calculateComplianceRiskScore({
+      roleCategory: 'executive',
+      isPep: record.isPep,
+      sanctionsMatchStatus: record.sanctionScreeningPassed ? 'resolved_false_positive' : 'none',
+      addressDaysRemaining: addressInfo.daysLeft,
+      hasValidId: true,
+      hasCriminalClearance: true,
+      adverseMediaFlag: false
+    });
+
+    const verifiedDocs = record.requirements.map(r => ({
+      type: r.title,
+      verifiedBy: r.verifiedBy || officerName,
+      verifiedAt: r.verifiedAt || new Date().toISOString(),
+      expiryDate: r.expiryDate,
+      status: r.status
+    }));
+
+    const pack = generateRegulatorEvidencePack(
+      emp.employeeId,
+      `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+      officerName,
+      riskEval,
+      adjudicationsHistory[emp.id] || [],
+      verifiedDocs
+    );
+
+    const jsonStr = JSON.stringify(pack, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EVIDENCE-PACK-${emp.employeeId}-${pack.manifestId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -592,9 +747,18 @@ export const FicaComplianceCenter: React.FC = () => {
                 </h4>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <span className="text-gray-400 block mb-1">Risk Classification</span>
-                    <span className="font-bold text-gray-800 uppercase">{selectedRecord.riskRating} Risk</span>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-gray-400 block mb-1">Risk Classification</span>
+                      <span className="font-bold text-gray-800 uppercase">{selectedRecord.riskRating} Risk</span>
+                    </div>
+                    <button
+                      onClick={() => handleViewRiskBreakdown(selectedEmployee, selectedRecord)}
+                      className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-[11px] font-semibold transition"
+                      title="View mathematical point breakdown"
+                    >
+                      Breakdown
+                    </button>
                   </div>
 
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -1092,11 +1256,223 @@ export const FicaComplianceCenter: React.FC = () => {
                 Close
               </button>
               <button
+                onClick={() => handleDownloadRegulatorEvidencePack(certificateEmployeeRecord.record, certificateEmployeeRecord.emp)}
+                className="px-4 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg inline-flex items-center gap-1.5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" /> Export Evidence Pack (BOJ/FID JSON)
+              </button>
+              <button
                 onClick={() => window.print()}
                 className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg inline-flex items-center gap-1.5 shadow-2xs"
               >
                 <Printer className="w-3.5 h-3.5" /> Print Certificate
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 7: Real Sanctions & PEP Match Adjudication Modal */}
+      {screeningTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-gray-200">
+            <div className="bg-rose-900 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-6 h-6 text-rose-400" />
+                <div>
+                  <h3 className="text-base font-bold">Watchlist & Sanctions Match Review</h3>
+                  <p className="text-xs text-rose-200">
+                    Subject: {screeningTarget.emp.personalInfo.firstName} {screeningTarget.emp.personalInfo.lastName} ({screeningTarget.emp.employeeId})
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setScreeningTarget(null)} className="text-rose-300 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleResolveAdjudication} className="p-6 space-y-4 text-xs">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                  Detected Watchlist Hits ({screeningTarget.result.hits.length})
+                </span>
+                <div className="space-y-2">
+                  {screeningTarget.result.hits.map((hit, idx) => (
+                    <div key={idx} className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-gray-900 text-xs">{hit.matchedEntity.name}</strong>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">
+                          {hit.matchScore}% Match · {hit.matchedEntity.listSource}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-600">{hit.matchedEntity.details}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Adjudication Decision *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjudicationDecision('false_positive')}
+                    className={`p-2.5 rounded-xl border text-left font-bold transition-colors ${
+                      adjudicationDecision === 'false_positive'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                        : 'border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    ✓ False-Positive (Cleared)
+                    <span className="block text-[10px] font-normal text-gray-500 mt-0.5">Non-identity verified via ID/DOB</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdjudicationDecision('confirmed_match')}
+                    className={`p-2.5 rounded-xl border text-left font-bold transition-colors ${
+                      adjudicationDecision === 'confirmed_match'
+                        ? 'bg-rose-50 border-rose-500 text-rose-800'
+                        : 'border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    ✗ Confirmed Match (Escalate)
+                    <span className="block text-[10px] font-normal text-gray-500 mt-0.5">Subject is sanctioned entity</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Adjudication Rationale & Regulatory Evidence *</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={adjudicationRationale}
+                  onChange={(e) => setAdjudicationRationale(e.target.value)}
+                  placeholder="e.g. Verified passport records, date of birth (1980 vs 1948 target) and residential address. Confirmed distinct individual with zero designated affiliation."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Supporting Evidence Document Reference</label>
+                <input
+                  type="text"
+                  value={adjudicationDocRef}
+                  onChange={(e) => setAdjudicationDocRef(e.target.value)}
+                  placeholder="e.g. PASSPORT-VERIFIED-2026.pdf"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>
+                  This decision will compute and store an immutable 64-character SHA-256 audit fingerprint in accordance with BOJ/FID guidance.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setScreeningTarget(null)}
+                  className="px-4 py-2 font-bold text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition-colors"
+                >
+                  Commit Compliance Adjudication
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 7: Explainable Risk Rating Breakdown Modal */}
+      {riskExplanation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <div>
+                  <h3 className="text-base font-bold">Explainable Risk Rating Breakdown</h3>
+                  <p className="text-xs text-slate-300">
+                    {riskExplanation.emp.personalInfo.firstName} {riskExplanation.emp.personalInfo.lastName} · {riskExplanation.emp.jobInfo.department}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setRiskExplanation(null)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Composite Score</span>
+                  <span className="text-3xl font-black text-gray-900">{riskExplanation.result.totalScore} / 100</span>
+                </div>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                  riskExplanation.result.riskTier === 'low' ? 'bg-emerald-100 text-emerald-800' :
+                  riskExplanation.result.riskTier === 'medium' ? 'bg-amber-100 text-amber-800' :
+                  'bg-rose-100 text-rose-800'
+                }`}>
+                  {riskExplanation.result.riskTier} Risk Tier
+                </span>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-800 mb-2">Mathematical Component Attribution</h4>
+                <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">Role Base Exposure ({riskExplanation.emp.jobInfo.jobTitle})</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.roleBaseScore} pts</strong>
+                  </div>
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">PEP Category / Affiliation Status</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.pepScore} pts</strong>
+                  </div>
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">Sanctions Watchlist Designation Factor</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.sanctionsScore} pts</strong>
+                  </div>
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">Proof of Address Freshness (&gt;90-day expiry rule)</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.addressScore} pts</strong>
+                  </div>
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">Government Photo ID Verification Status</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.idScore} pts</strong>
+                  </div>
+                  <div className="p-2.5 flex items-center justify-between bg-white">
+                    <span className="text-gray-600">Criminal Clearance & Sensitive Role Check</span>
+                    <strong className="text-gray-900">+{riskExplanation.result.breakdown.clearanceScore} pts</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-800 mb-1.5">Regulator Attribution Narrative</h4>
+                <ul className="space-y-1 list-disc list-inside text-gray-600 text-[11px]">
+                  {riskExplanation.result.summaryExplanation.map((exp, idx) => (
+                    <li key={idx}>{exp}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setRiskExplanation(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

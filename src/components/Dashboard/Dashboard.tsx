@@ -19,7 +19,8 @@ import {
   Briefcase,
   ChevronRight,
   UserCheck,
-  PenTool
+  PenTool,
+  Building
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -447,6 +448,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   </div>
                   <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                 </button>
+
+                <button
+                  onClick={() => onNavigate && onNavigate('organizational-structure')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 text-left transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-xs font-semibold text-slate-900">My Reporting Line & Org Chart</p>
+                      <p className="text-[11px] text-slate-500">Managers, peers & full org tree</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                </button>
               </div>
             </div>
 
@@ -754,7 +769,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       {/* Quick Actions for HR & Managers */}
       <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
         <h2 className="text-base font-bold text-gray-900 mb-4">Quick Management Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <button 
             onClick={() => onNavigate && onNavigate('employees')}
             className="flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 hover:border-blue-300 transition-all text-center group"
@@ -764,6 +779,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <span className="text-[11px] text-gray-500 mt-0.5">Directory & onboarding</span>
           </button>
           
+          <button 
+            onClick={() => onNavigate && onNavigate('organizational-structure')}
+            className="flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 hover:border-indigo-300 transition-all text-center group"
+          >
+            <Building className="w-7 h-7 text-indigo-600 mb-2 group-hover:scale-105 transition-transform" />
+            <span className="text-xs font-semibold text-gray-900">Org Chart & Hierarchy</span>
+            <span className="text-[11px] text-gray-500 mt-0.5">Account focus & team tree</span>
+          </button>
+
           <button 
             onClick={() => onNavigate && onNavigate('approvals-inbox')}
             className="flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:bg-slate-50 hover:border-emerald-300 transition-all text-center group"

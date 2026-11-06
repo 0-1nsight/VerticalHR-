@@ -149,35 +149,52 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // Default data
 const defaultDepartments: Department[] = [
   {
-    id: '1',
+    id: 'dept-exec',
+    name: 'Executive & Strategy',
+    description: 'Corporate leadership, governance and strategic initiatives',
+    managerId: 'EMP000',
+    employeeCount: 1,
+    maxLeavePerDay: 1,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dept-hr',
     name: 'Human Resources',
-    description: 'Manages employee relations and policies',
-    employeeCount: 5,
+    description: 'People operations, talent development and culture',
+    managerId: 'EMP003',
+    parentDepartmentId: 'dept-exec',
+    employeeCount: 3,
+    maxLeavePerDay: 2,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dept-eng',
+    name: 'Engineering',
+    description: 'Cloud architecture, core platform and systems development',
+    managerId: 'EMP004',
+    parentDepartmentId: 'dept-exec',
+    employeeCount: 4,
     maxLeavePerDay: 3,
     createdAt: new Date().toISOString(),
   },
   {
-    id: '2',
-    name: 'Engineering',
-    description: 'Software development and technical operations',
-    employeeCount: 25,
-    maxLeavePerDay: 5,
+    id: 'dept-comp',
+    name: 'Compliance & Audit',
+    description: 'FICA, AML screening, statutory audits and regulatory adherence',
+    managerId: 'EMP005',
+    parentDepartmentId: 'dept-exec',
+    employeeCount: 2,
+    maxLeavePerDay: 1,
     createdAt: new Date().toISOString(),
   },
   {
-    id: '3',
-    name: 'Marketing',
-    description: 'Brand promotion and customer acquisition',
-    employeeCount: 8,
-    maxLeavePerDay: 2,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Finance',
-    description: 'Financial planning, accounting, and compliance',
-    employeeCount: 6,
-    maxLeavePerDay: 2,
+    id: 'dept-fin',
+    name: 'Finance & Payroll',
+    description: 'Financial management, Jamaican statutory deductions and treasury',
+    managerId: 'EMP010',
+    parentDepartmentId: 'dept-exec',
+    employeeCount: 2,
+    maxLeavePerDay: 1,
     createdAt: new Date().toISOString(),
   },
 ];
@@ -218,56 +235,371 @@ const defaultLeaveTypes: LeaveType[] = [
 
 const defaultEmployees: Employee[] = [
   {
-    id: '1',
+    id: 'emp-0',
+    employeeId: 'EMP000',
+    profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Marcus',
+      lastName: 'Vance',
+      email: 'superadmin@verticalhrm.com',
+      phone: '+1 (876) 555-0100',
+      dateOfBirth: '1980-04-12',
+      address: {
+        street: '15 Norbrook Heights',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN08',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Victoria Vance',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0101',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Chief Executive Officer',
+      department: 'Executive & Strategy',
+      reportingManager: 'Board of Directors',
+      employmentStatus: 'active',
+      hireDate: '2020-01-01',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 280000,
+    },
+    jobHistory: [
+      {
+        id: 'jh-0',
+        company: 'Caribbean Financial Holdings',
+        position: 'Managing Director',
+        startDate: '2014-03-01',
+        endDate: '2019-12-31',
+        description: 'Led pan-Caribbean commercial operations and strategic banking integrations.',
+      }
+    ],
+    qualifications: [
+      {
+        id: 'q-0',
+        name: 'MBA in Strategic Management',
+        institution: 'Harvard Business School',
+        dateObtained: '2008-06-01',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2019-12-15',
+      policeRecordCheck: true,
+      policeRecordDate: '2019-12-15',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-3',
+    employeeId: 'EMP003',
+    profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Patricia',
+      lastName: 'Sterling',
+      email: 'admin@verticalhrm.com',
+      phone: '+1 (876) 555-0130',
+      dateOfBirth: '1984-09-18',
+      address: {
+        street: '8 Hope Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN06',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Richard Sterling',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0131',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'VP of People & Operations',
+      department: 'Human Resources',
+      reportingManager: 'Marcus Vance',
+      reportsTo: 'EMP000',
+      supervisorId: 'EMP000',
+      employmentStatus: 'active',
+      hireDate: '2020-06-15',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 165000,
+    },
+    jobHistory: [
+      {
+        id: 'jh-3',
+        company: 'Digicel Group',
+        position: 'Head of Talent Operations',
+        startDate: '2015-05-01',
+        endDate: '2020-05-30',
+        description: 'Managed talent acquisition, HR policy governance, and multi-region workforce management.',
+      }
+    ],
+    qualifications: [
+      {
+        id: 'q-3',
+        name: 'Master of Human Resource Management',
+        institution: 'University of the West Indies (Mona)',
+        dateObtained: '2012-11-10',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2020-06-01',
+      policeRecordCheck: true,
+      policeRecordDate: '2020-06-01',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-2',
+    employeeId: 'EMP002',
+    profilePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Sarah',
+      lastName: 'Smith',
+      email: 'sarah.smith@company.com',
+      phone: '+1 (876) 555-0125',
+      dateOfBirth: '1988-08-22',
+      address: {
+        street: '456 Trafalgar Park',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN05',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Mike Smith',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0126',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'HR Manager & Culture Lead',
+      department: 'Human Resources',
+      reportingManager: 'Patricia Sterling',
+      reportsTo: 'EMP003',
+      supervisorId: 'EMP003',
+      employmentStatus: 'active',
+      hireDate: '2021-03-10',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 115000,
+    },
+    jobHistory: [
+      {
+        id: 'jh-2',
+        company: 'Sagicor Life',
+        position: 'Senior HR Generalist',
+        startDate: '2017-02-01',
+        endDate: '2021-02-28',
+        description: 'Administered employee benefit plans, leave policies, and performance cycles.',
+      }
+    ],
+    qualifications: [
+      {
+        id: 'q-2',
+        name: 'BSc in Psychology & Human Resource Development',
+        institution: 'University of Technology, Jamaica',
+        dateObtained: '2013-05-15',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2021-03-01',
+      policeRecordCheck: true,
+      policeRecordDate: '2021-03-01',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-7',
+    employeeId: 'EMP007',
+    profilePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Chloe',
+      lastName: 'Bennett',
+      email: 'chloe.bennett@company.com',
+      phone: '+1 (876) 555-0177',
+      dateOfBirth: '1993-11-04',
+      address: {
+        street: '22 Constant Spring Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN10',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Grace Bennett',
+        relationship: 'Mother',
+        phone: '+1 (876) 555-0178',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Talent Acquisition Specialist',
+      department: 'Human Resources',
+      reportingManager: 'Sarah Smith',
+      reportsTo: 'EMP002',
+      supervisorId: 'EMP002',
+      employmentStatus: 'active',
+      hireDate: '2022-04-18',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 82000,
+    },
+    jobHistory: [],
+    qualifications: [
+      {
+        id: 'q-7',
+        name: 'BSc in Communications',
+        institution: 'University of the West Indies',
+        dateObtained: '2016-06-01',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2022-04-10',
+      policeRecordCheck: true,
+      policeRecordDate: '2022-04-10',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-4',
+    employeeId: 'EMP004',
+    profilePhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'David',
+      lastName: 'Chen',
+      email: 'manager@verticalhrm.com',
+      phone: '+1 (876) 555-0140',
+      dateOfBirth: '1983-02-28',
+      address: {
+        street: '72 Old Hope Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN06',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Linda Chen',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0141',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'VP of Engineering',
+      department: 'Engineering',
+      reportingManager: 'Marcus Vance',
+      reportsTo: 'EMP000',
+      supervisorId: 'EMP000',
+      employmentStatus: 'active',
+      hireDate: '2020-03-01',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 175000,
+    },
+    jobHistory: [
+      {
+        id: 'jh-4',
+        company: 'Amazon Web Services',
+        position: 'Software Engineering Manager',
+        startDate: '2015-08-01',
+        endDate: '2020-02-15',
+        description: 'Architected distributed event-driven systems and managed high-throughput backend services.',
+      }
+    ],
+    qualifications: [
+      {
+        id: 'q-4',
+        name: 'MSc in Computer Science',
+        institution: 'University of Waterloo',
+        dateObtained: '2009-05-20',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2020-02-20',
+      policeRecordCheck: true,
+      policeRecordDate: '2020-02-20',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-1',
     employeeId: 'EMP001',
     profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     personalInfo: {
       firstName: 'John',
       lastName: 'Doe',
-      email: 'john.doe@company.com',
-      phone: '+1-555-0123',
+      email: 'employee@verticalhrm.com',
+      phone: '+1 (876) 555-0123',
       dateOfBirth: '1990-05-15',
       address: {
-        street: '123 Main St',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001',
-        country: 'USA',
+        street: '123 Waterloo Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN10',
+        country: 'Jamaica',
       },
       emergencyContact: {
         name: 'Jane Doe',
         relationship: 'Spouse',
-        phone: '+1-555-0124',
+        phone: '+1 (876) 555-0124',
       },
     },
     jobInfo: {
-      jobTitle: 'Software Engineer',
+      jobTitle: 'Senior Software Engineer',
       department: 'Engineering',
-      reportingManager: 'Alice Johnson',
+      reportingManager: 'David Chen',
+      reportsTo: 'EMP004',
+      supervisorId: 'EMP004',
       employmentStatus: 'active',
       hireDate: '2022-01-15',
-      workLocation: 'New York Office',
+      workLocation: 'Kingston Corporate Hub',
       employmentType: 'full_time',
-      salary: 85000,
+      salary: 110000,
     },
     jobHistory: [
       {
-        id: '1',
+        id: 'jh-1',
         company: 'Tech Startup Inc.',
         position: 'Junior Developer',
         startDate: '2020-06-01',
         endDate: '2021-12-31',
-        description: 'Developed web applications using React and Node.js',
-        reasonForLeaving: 'Career advancement'
+        description: 'Developed modern web applications using React, TypeScript and Node.js.',
       }
     ],
     qualifications: [
       {
-        id: '1',
+        id: 'q-1',
         name: 'Bachelor of Computer Science',
-        institution: 'State University',
+        institution: 'University of Technology, Jamaica',
         dateObtained: '2020-05-15',
-        verified: true
+        verified: true,
       }
     ],
     documents: [],
@@ -276,71 +608,352 @@ const defaultEmployees: Employee[] = [
       backgroundCheckDate: '2022-01-10',
       policeRecordCheck: true,
       policeRecordDate: '2022-01-10',
-      referenceChecks: []
+      referenceChecks: [],
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: '2',
-    employeeId: 'EMP002',
-    profilePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=250',
+    id: 'emp-8',
+    employeeId: 'EMP008',
+    profilePhoto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=250',
     personalInfo: {
-      firstName: 'Sarah',
-      lastName: 'Smith',
-      email: 'sarah.smith@company.com',
-      phone: '+1-555-0125',
-      dateOfBirth: '1988-08-22',
+      firstName: 'Maya',
+      lastName: 'Lin',
+      email: 'maya.lin@company.com',
+      phone: '+1 (876) 555-0188',
+      dateOfBirth: '1992-07-30',
       address: {
-        street: '456 Oak Ave',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10002',
-        country: 'USA',
+        street: '44 Barbican Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN06',
+        country: 'Jamaica',
       },
       emergencyContact: {
-        name: 'Mike Smith',
-        relationship: 'Spouse',
-        phone: '+1-555-0126',
+        name: 'George Lin',
+        relationship: 'Father',
+        phone: '+1 (876) 555-0189',
       },
     },
     jobInfo: {
-      jobTitle: 'HR Manager',
-      department: 'Human Resources',
-      reportingManager: 'CEO',
+      jobTitle: 'Frontend Systems Engineer',
+      department: 'Engineering',
+      reportingManager: 'David Chen',
+      reportsTo: 'EMP004',
+      supervisorId: 'EMP004',
       employmentStatus: 'active',
-      hireDate: '2021-03-10',
-      workLocation: 'New York Office',
+      hireDate: '2022-09-01',
+      workLocation: 'Kingston Corporate Hub',
       employmentType: 'full_time',
-      salary: 75000,
+      salary: 102000,
     },
-    jobHistory: [
-      {
-        id: '1',
-        company: 'Previous Corp',
-        position: 'HR Specialist',
-        startDate: '2019-01-01',
-        endDate: '2021-02-28',
-        description: 'Managed recruitment and employee relations',
-        reasonForLeaving: 'Better opportunity'
-      }
-    ],
+    jobHistory: [],
     qualifications: [
       {
-        id: '1',
-        name: 'Master of Human Resources',
-        institution: 'Business School',
-        dateObtained: '2018-12-15',
-        verified: true
+        id: 'q-8',
+        name: 'BSc in Software Engineering',
+        institution: 'University of the West Indies',
+        dateObtained: '2015-06-15',
+        verified: true,
       }
     ],
     documents: [],
     vettingStatus: {
       backgroundCheckCompleted: true,
-      backgroundCheckDate: '2021-03-05',
+      backgroundCheckDate: '2022-08-20',
       policeRecordCheck: true,
-      policeRecordDate: '2021-03-05',
-      referenceChecks: []
+      policeRecordDate: '2022-08-20',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-9',
+    employeeId: 'EMP009',
+    profilePhoto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Tariq',
+      lastName: 'Douglas',
+      email: 'tariq.douglas@company.com',
+      phone: '+1 (876) 555-0191',
+      dateOfBirth: '1991-03-14',
+      address: {
+        street: '19 Red Hills Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN19',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Angela Douglas',
+        relationship: 'Sister',
+        phone: '+1 (876) 555-0192',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'QA & DevOps Lead',
+      department: 'Engineering',
+      reportingManager: 'David Chen',
+      reportsTo: 'EMP004',
+      supervisorId: 'EMP004',
+      employmentStatus: 'active',
+      hireDate: '2022-11-15',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 108000,
+    },
+    jobHistory: [],
+    qualifications: [
+      {
+        id: 'q-9',
+        name: 'BSc in Computer Science & Networking',
+        institution: 'University of Technology, Jamaica',
+        dateObtained: '2014-11-20',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2022-11-01',
+      policeRecordCheck: true,
+      policeRecordDate: '2022-11-01',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-5',
+    employeeId: 'EMP005',
+    profilePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Elena',
+      lastName: 'Rostova',
+      email: 'auditor@verticalhrm.com',
+      phone: '+1 (876) 555-0150',
+      dateOfBirth: '1985-12-05',
+      address: {
+        street: '33 Millsborough Avenue',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN06',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Alexei Rostov',
+        relationship: 'Brother',
+        phone: '+1 (876) 555-0151',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Chief Compliance & Risk Officer',
+      department: 'Compliance & Audit',
+      reportingManager: 'Marcus Vance',
+      reportsTo: 'EMP000',
+      supervisorId: 'EMP000',
+      employmentStatus: 'active',
+      hireDate: '2021-01-10',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 155000,
+    },
+    jobHistory: [
+      {
+        id: 'jh-5',
+        company: 'Bank of Jamaica',
+        position: 'Senior Bank Examiner & Compliance Analyst',
+        startDate: '2013-04-01',
+        endDate: '2020-12-31',
+        description: 'Conducted prudential financial audits, AML/CFT regulatory enforcement, and FICA compliance inspections.',
+      }
+    ],
+    qualifications: [
+      {
+        id: 'q-5',
+        name: 'Certified Anti-Money Laundering Specialist (CAMS)',
+        institution: 'ACAMS',
+        dateObtained: '2016-08-20',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2021-01-02',
+      policeRecordCheck: true,
+      policeRecordDate: '2021-01-02',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-6',
+    employeeId: 'EMP006',
+    profilePhoto: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Andre',
+      lastName: 'Campbell',
+      email: 'andre.campbell@company.com',
+      phone: '+1 (876) 555-0160',
+      dateOfBirth: '1991-06-20',
+      address: {
+        street: '14 Seymour Avenue',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN06',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Marcia Campbell',
+        relationship: 'Mother',
+        phone: '+1 (876) 555-0161',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Senior AML Compliance Analyst',
+      department: 'Compliance & Audit',
+      reportingManager: 'Elena Rostova',
+      reportsTo: 'EMP005',
+      supervisorId: 'EMP005',
+      employmentStatus: 'active',
+      hireDate: '2022-03-01',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 98000,
+    },
+    jobHistory: [],
+    qualifications: [
+      {
+        id: 'q-6',
+        name: 'BSc in Banking & Finance',
+        institution: 'University of the West Indies',
+        dateObtained: '2014-06-10',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2022-02-15',
+      policeRecordCheck: true,
+      policeRecordDate: '2022-02-15',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-10',
+    employeeId: 'EMP010',
+    profilePhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Kevin',
+      lastName: "O'Connor",
+      email: 'kevin.oconnor@company.com',
+      phone: '+1 (876) 555-0210',
+      dateOfBirth: '1982-10-10',
+      address: {
+        street: '5 Manor Park Drive',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN08',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Rachel O\'Connor',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0211',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Director of Financial Planning',
+      department: 'Finance & Payroll',
+      reportingManager: 'Marcus Vance',
+      reportsTo: 'EMP000',
+      supervisorId: 'EMP000',
+      employmentStatus: 'active',
+      hireDate: '2020-08-01',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 160000,
+    },
+    jobHistory: [],
+    qualifications: [
+      {
+        id: 'q-10',
+        name: 'FCCA / Certified Public Accountant',
+        institution: 'ACCA Global',
+        dateObtained: '2009-12-01',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2020-07-15',
+      policeRecordCheck: true,
+      policeRecordDate: '2020-07-15',
+      referenceChecks: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'emp-11',
+    employeeId: 'EMP011',
+    profilePhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=250',
+    personalInfo: {
+      firstName: 'Stacy-Ann',
+      lastName: 'Wright',
+      email: 'stacy.wright@company.com',
+      phone: '+1 (876) 555-0220',
+      dateOfBirth: '1989-05-24',
+      address: {
+        street: '9 Lady Musgrave Road',
+        city: 'Kingston',
+        state: 'St. Andrew',
+        zipCode: 'JMAKN05',
+        country: 'Jamaica',
+      },
+      emergencyContact: {
+        name: 'Carlton Wright',
+        relationship: 'Spouse',
+        phone: '+1 (876) 555-0221',
+      },
+    },
+    jobInfo: {
+      jobTitle: 'Senior Payroll Accountant',
+      department: 'Finance & Payroll',
+      reportingManager: "Kevin O'Connor",
+      reportsTo: 'EMP010',
+      supervisorId: 'EMP010',
+      employmentStatus: 'active',
+      hireDate: '2021-05-15',
+      workLocation: 'Kingston Corporate Hub',
+      employmentType: 'full_time',
+      salary: 96000,
+    },
+    jobHistory: [],
+    qualifications: [
+      {
+        id: 'q-11',
+        name: 'BSc in Accounting',
+        institution: 'University of the West Indies',
+        dateObtained: '2011-06-15',
+        verified: true,
+      }
+    ],
+    documents: [],
+    vettingStatus: {
+      backgroundCheckCompleted: true,
+      backgroundCheckDate: '2021-05-01',
+      policeRecordCheck: true,
+      policeRecordDate: '2021-05-01',
+      referenceChecks: [],
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -1981,8 +2594,35 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    setEmployees(loadFromStorage('hrm_employees', defaultEmployees));
-    setDepartments(loadFromStorage('hrm_departments', defaultDepartments));
+    const rawEmps = loadFromStorage('hrm_employees', defaultEmployees);
+    const existingEmpIds = new Set(rawEmps.map((e: Employee) => e.employeeId));
+    const missingEmps = defaultEmployees.filter(d => !existingEmpIds.has(d.employeeId));
+    const mergedEmps = rawEmps.map((emp: Employee) => {
+      const match = defaultEmployees.find(d => d.employeeId === emp.employeeId);
+      if (match) {
+        return {
+          ...emp,
+          jobInfo: {
+            ...emp.jobInfo,
+            reportsTo: match.jobInfo.reportsTo || emp.jobInfo.reportsTo,
+            reportingManager: match.jobInfo.reportingManager || emp.jobInfo.reportingManager,
+            jobTitle: emp.jobInfo.jobTitle || match.jobInfo.jobTitle,
+            department: emp.jobInfo.department || match.jobInfo.department,
+          }
+        };
+      }
+      return emp;
+    });
+    const finalEmps = [...mergedEmps, ...missingEmps];
+    setEmployees(finalEmps);
+    localStorage.setItem('hrm_employees', JSON.stringify(finalEmps));
+
+    const rawDepts = loadFromStorage('hrm_departments', defaultDepartments);
+    const existingDeptNames = new Set(rawDepts.map((d: Department) => d.name));
+    const missingDepts = defaultDepartments.filter(d => !existingDeptNames.has(d.name));
+    const finalDepts = [...rawDepts, ...missingDepts];
+    setDepartments(finalDepts);
+    localStorage.setItem('hrm_departments', JSON.stringify(finalDepts));
     setLeaveTypes(loadFromStorage('hrm_leave_types', defaultLeaveTypes));
     setLeaveRequests(loadFromStorage('hrm_leave_requests', []));
     setLeaveBalances(loadFromStorage('hrm_leave_balances', defaultLeaveBalances));

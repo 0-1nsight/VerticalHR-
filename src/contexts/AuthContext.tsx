@@ -24,6 +24,7 @@ const defaultUsers: User[] = [
     role: 'super_admin',
     firstName: 'Marcus',
     lastName: 'Vance',
+    employeeId: 'EMP000',
     isActive: true,
     createdAt: new Date().toISOString(),
   },

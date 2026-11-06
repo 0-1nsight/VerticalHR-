@@ -20,7 +20,10 @@ import {
   CheckCircle,
   DollarSign,
   LifeBuoy,
-  History
+  History,
+  CreditCard,
+  Sparkles,
+  Rocket
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -61,6 +64,7 @@ const menuItems: MenuItem[] = [
     icon: <Users className="w-5 h-5" />,
     children: [
       { id: 'employees', label: 'Employee List', icon: <Users className="w-4 h-4" /> },
+      { id: 'organizational-structure', label: 'Org Chart & Hierarchy', icon: <Building className="w-4 h-4 text-blue-600" /> },
       { id: 'add-employee', label: 'Add Employee', icon: <UserPlus className="w-4 h-4" />, roles: ['super_admin', 'hr_admin', 'admin', 'hr_manager'] },
       { id: 'documents', label: 'Document & Photo Vault', icon: <FileText className="w-4 h-4" /> },
       { id: 'profile-change-requests', label: 'Profile Change Requests', icon: <FileText className="w-4 h-4" />, roles: ['super_admin', 'hr_admin', 'admin', 'hr_manager'] },
@@ -90,6 +94,11 @@ const menuItems: MenuItem[] = [
     id: 'hr-helpdesk',
     label: 'HR Cases & Helpdesk',
     icon: <LifeBuoy className="w-5 h-5 text-amber-500" />,
+  },
+  {
+    id: 'ai-policy-assistant',
+    label: 'AI Policy Assistant',
+    icon: <Sparkles className="w-5 h-5 text-indigo-500" />,
   },
   {
     id: 'performance',
@@ -127,6 +136,8 @@ const menuItems: MenuItem[] = [
     icon: <Settings className="w-5 h-5" />,
     roles: ['super_admin', 'hr_admin', 'admin', 'hr_manager', 'auditor'],
     children: [
+      { id: 'launch-readiness', label: 'Launch Readiness Hub', icon: <Rocket className="w-4 h-4 text-emerald-600" />, roles: ['super_admin', 'hr_admin', 'admin', 'auditor'] },
+      { id: 'billing-platform', label: 'Platform, Billing & API', icon: <CreditCard className="w-4 h-4 text-purple-600" />, roles: ['super_admin', 'hr_admin', 'admin'] },
       { id: 'audit-trail', label: 'Immutable Audit Trail', icon: <History className="w-4 h-4 text-blue-600" />, roles: ['super_admin', 'hr_admin', 'admin', 'hr_manager', 'auditor'] },
       { id: 'fica-compliance', label: 'FICA & KYC Compliance', icon: <ShieldCheck className="w-4 h-4 text-emerald-600" /> },
       { id: 'organizational-structure', label: 'Organizational Structure', icon: <Building className="w-4 h-4" /> },

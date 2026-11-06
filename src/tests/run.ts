@@ -4,6 +4,10 @@ import { runPhase2Tests } from './phase2.test';
 import { runPhase3Tests } from './phase3.test';
 import { runPhase4Tests } from './phase4.test';
 import { runPhase5Tests } from './phase5.test';
+import { runPhase6Tests } from './phase6.test';
+import { runPhase7Tests } from './phase7.test';
+import { runPhase8Tests } from './phase8.test';
+import { runPhase9Tests } from './phase9.test';
 
 async function main() {
   console.log('====================================================');
@@ -58,8 +62,40 @@ async function main() {
     process.exit(1);
   }
 
+  console.log('\n--- Phase 6: Recruiting, Onboarding & Offboarding ---');
+  const p6 = await runPhase6Tests();
+  p6.results.forEach((l) => console.log(`  ${l}`));
+  if (!p6.passed) {
+    console.error('\nPhase 6 acceptance tests FAILED.');
+    process.exit(1);
+  }
+
+  console.log('\n--- Phase 7: FICA & KYC Compliance Center (Financial Sector Differentiator) ---');
+  const p7 = await runPhase7Tests();
+  p7.results.forEach((l) => console.log(`  ${l}`));
+  if (!p7.passed) {
+    console.error('\nPhase 7 acceptance tests FAILED.');
+    process.exit(1);
+  }
+
+  console.log('\n--- Phase 8: Platform, Billing, Integrations & AI Engine ---');
+  const p8 = await runPhase8Tests();
+  p8.results.forEach((l) => console.log(`  ${l}`));
+  if (!p8.passed) {
+    console.error('\nPhase 8 acceptance tests FAILED.');
+    process.exit(1);
+  }
+
+  console.log('\n--- Phase 9: Launch Readiness, Legal, Migrations, DR & Production Audit ---');
+  const p9 = await runPhase9Tests();
+  p9.results.forEach((l) => console.log(`  ${l}`));
+  if (!p9.passed) {
+    console.error('\nPhase 9 acceptance tests FAILED.');
+    process.exit(1);
+  }
+
   console.log('\n====================================================');
-  console.log(' ALL CUMULATIVE PHASE 0, 1, 2, 3, 4 & 5 TESTS PASSED');
+  console.log(' ALL CUMULATIVE PHASE 0 THROUGH 9 TESTS PASSED (100% COMPLETE)');
   console.log('====================================================');
 }
 
