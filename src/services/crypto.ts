@@ -11,7 +11,7 @@ const DEFAULT_FALLBACK_KEY_HEX = '0123456789abcdef0123456789abcdef0123456789abcd
  * Derives a 256-bit CryptoKey from environment or master key material.
  */
 async function getEncryptionKey(): Promise<CryptoKey> {
-  const envKey = typeof process !== 'undefined' && process.env?.ENCRYPTION_KEY_BASE64;
+  const envKey = (typeof process !== 'undefined' ? process.env?.ENCRYPTION_KEY_BASE64 : undefined) || '';
   let keyBytes: Uint8Array;
 
   if (envKey) {
@@ -35,7 +35,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
     keyBytes = padded;
   }
 
-  return crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+  return crypto.subtle.importKey('raw', keyBytes as BufferSource, { name: 'AES-GCM' }, false, [
     'encrypt',
     'decrypt',
   ]);
@@ -61,7 +61,7 @@ export async function encryptField(plaintext: string | number | null | undefined
       iv,
     },
     key,
-    encodedData
+    encodedData as BufferSource
   );
 
   const ivHex = Array.from(iv)
@@ -105,7 +105,7 @@ export async function decryptField(ciphertext: string | null | undefined): Promi
       iv,
     },
     key,
-    cipherBytes
+    cipherBytes as BufferSource
   );
 
   return new TextDecoder().decode(decryptedBuffer);

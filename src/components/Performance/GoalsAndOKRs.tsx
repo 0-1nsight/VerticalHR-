@@ -140,7 +140,7 @@ export const GoalsAndOKRs: React.FC = () => {
     metricTarget: 100,
     metricCurrent: g.progress,
     weightPercentage: filteredGoals.length > 0 ? Math.round((100 / filteredGoals.length) * 10) / 10 : 0,
-    status: g.status,
+    status: (g.status === 'overdue' ? 'at_risk' : g.status) as 'not_started' | 'in_progress' | 'at_risk' | 'completed',
   }));
   const okrRollup = calculateWeightedOkrProgress(okrItems);
 

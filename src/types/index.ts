@@ -24,6 +24,11 @@ export interface Employee {
     email: string;
     phone: string;
     dateOfBirth: string;
+    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | string;
+    nationalId?: string;
+    trn?: string;
+    nis?: string;
+    taxNumber?: string;
     address: {
       street: string;
       city: string;
@@ -102,10 +107,16 @@ export interface ReferenceCheck {
   id: string;
   referenceName: string;
   company: string;
-  position: string;
-  contactInfo: string;
-  checkDate: string;
-  status: 'pending' | 'completed' | 'failed';
+  position?: string;
+  contactInfo?: string;
+  phone?: string;
+  email?: string;
+  relationship?: string;
+  feedback?: string;
+  recommendation?: string;
+  dateContacted?: string;
+  checkDate?: string;
+  status?: 'pending' | 'completed' | 'failed';
   notes?: string;
 }
 
@@ -246,6 +257,9 @@ export interface PerformanceReview {
   selfAssessment?: PerformanceAssessment;
   supervisorAssessment?: PerformanceAssessment;
   overallScore?: number;
+  finalScore?: number;
+  reviewerId?: string;
+  feedback?: string;
   status: 'draft' | 'employee_submitted' | 'supervisor_review' | 'in_progress' | 'completed';
   goals: PerformanceGoal[];
   competencies: CompetencyRating[];
@@ -552,6 +566,7 @@ export interface FicaRequirement {
   documentName?: string;
   fileData?: string;
   uploadedAt?: string;
+  uploadedBy?: string;
   verifiedBy?: string;
   verifiedAt?: string;
   expiryDate?: string; // e.g. proof of address valid max 90 days in financial sector
@@ -682,10 +697,13 @@ export interface Candidate {
 
 export interface OnboardingTask {
   id: string;
-  tenantId: string;
-  employeeId: string;
-  employeeName: string;
-  department: string;
+  tenantId?: string;
+  employeeId?: string;
+  employeeName?: string;
+  candidateId?: string;
+  candidateName?: string;
+  jobTitle?: string;
+  department?: string;
   title: string;
   category: 'it_setup' | 'hr_paperwork' | 'compliance_training' | 'manager_checkin';
   assignedTo: string;

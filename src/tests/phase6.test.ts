@@ -99,6 +99,7 @@ export async function runPhase6Tests(): Promise<{ passed: boolean; results: stri
     // ------------------------------------------------------------------------
     const testCandidate: Candidate = {
       id: 'cand-202',
+      tenantId: 'tenant-001',
       requisitionId: 'req-01',
       jobTitle: 'AML Compliance Specialist',
       name: 'Tamara Richards',

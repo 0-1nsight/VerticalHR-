@@ -314,7 +314,7 @@ export const FicaComplianceCenter: React.FC = () => {
       updateFicaRecord(screeningTarget.emp.id, {
         sanctionScreeningPassed: false,
         sanctionScreeningDate: today,
-        status: 'action_required',
+        status: 'non_compliant',
         riskRating: 'high',
         lastAuditedAt: today,
         auditedBy: officerName
@@ -328,7 +328,7 @@ export const FicaComplianceCenter: React.FC = () => {
   const handleViewRiskBreakdown = (emp: Employee, record: FicaComplianceRecord) => {
     const addressInfo = getAddressExpiryInfo(record);
     const hasValidId = record.requirements.some(r => r.type === 'id_document' && r.status === 'compliant');
-    const hasCriminalClearance = record.requirements.some(r => r.type === 'criminal_record' && r.status === 'compliant');
+    const hasCriminalClearance = record.requirements.some(r => r.type === 'criminal_clearance' && r.status === 'compliant');
 
     let roleCategory: 'executive' | 'treasury_finance' | 'operations' | 'general_staff' = 'general_staff';
     const dept = emp.jobInfo.department.toLowerCase();

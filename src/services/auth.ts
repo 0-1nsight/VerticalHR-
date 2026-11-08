@@ -158,7 +158,7 @@ async function computeTotpCode(base32Secret: string, counter: number): Promise<s
 
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    keyBytes,
+    keyBytes as BufferSource,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']
@@ -204,7 +204,7 @@ function base32Decode(base32: string): Uint8Array {
  * Checks whether an account is currently locked due to repeated failed login attempts.
  */
 export function checkAccountLockout(
-  failedAttempts: number,
+  _failedAttempts: number,
   lockedUntil?: string | null
 ): LockoutStatus {
   if (lockedUntil) {

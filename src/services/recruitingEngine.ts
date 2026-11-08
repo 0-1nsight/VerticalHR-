@@ -252,7 +252,7 @@ export function convertCandidateToEmployeeWithChecklist(
       referenceChecks: [
         {
           id: 'ref-1',
-          refereeName: 'Former Direct Manager',
+          referenceName: 'Former Direct Manager',
           company: 'Prior Enterprise',
           phone: '+1 (876) 555-0199',
           email: 'referee@prior.com',
@@ -275,7 +275,7 @@ export function convertCandidateToEmployeeWithChecklist(
       candidateName: candidate.name,
       jobTitle,
       title: 'IT Asset & High-Security Laptop Provisioning',
-      category: 'it',
+      category: 'it_setup',
       assignedTo: 'IT Systems Admin',
       dueDate: todayStr,
       status: 'pending'
@@ -286,7 +286,7 @@ export function convertCandidateToEmployeeWithChecklist(
       candidateName: candidate.name,
       jobTitle,
       title: 'Company Handbook & Anti-Money Laundering Policy Signoff',
-      category: 'compliance',
+      category: 'compliance_training',
       assignedTo: 'HR Operations',
       dueDate: todayStr,
       status: 'pending'
@@ -297,7 +297,7 @@ export function convertCandidateToEmployeeWithChecklist(
       candidateName: candidate.name,
       jobTitle,
       title: 'Direct Deposit Banking & Jamaican NIS/TRN Form Verification',
-      category: 'documentation',
+      category: 'hr_paperwork',
       assignedTo: 'Payroll Specialist',
       dueDate: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
       status: 'pending'
@@ -308,7 +308,7 @@ export function convertCandidateToEmployeeWithChecklist(
       candidateName: candidate.name,
       jobTitle,
       title: '30-Day Manager Performance & OKR Calibration',
-      category: 'training',
+      category: 'manager_checkin',
       assignedTo: requisition?.hiringManager || 'Department Manager',
       dueDate: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0],
       status: 'pending'
@@ -319,7 +319,7 @@ export function convertCandidateToEmployeeWithChecklist(
       candidateName: candidate.name,
       jobTitle,
       title: '90-Day Formal Probation Evaluation & Permanent Confirmation',
-      category: 'training',
+      category: 'manager_checkin',
       assignedTo: 'HR Manager',
       dueDate: new Date(Date.now() + 86400000 * 90).toISOString().split('T')[0],
       status: 'pending'

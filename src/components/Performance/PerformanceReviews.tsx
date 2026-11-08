@@ -43,7 +43,8 @@ export const PerformanceReviews: React.FC = () => {
   const [editingReview, setEditingReview] = useState<PerformanceReview | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const getEmployeeName = (empId: string) => {
+  const getEmployeeName = (empId?: string) => {
+    if (!empId) return 'Assigned Reviewer';
     const employee = employees.find(emp => emp.id === empId || emp.employeeId === empId);
     return employee ? `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}` : 'Staff Member';
   };

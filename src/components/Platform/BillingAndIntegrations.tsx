@@ -142,7 +142,7 @@ export const BillingAndIntegrations: React.FC = () => {
       const session = createAuditedImpersonationSession(
         {
           id: user?.id || 'usr-sa-1',
-          name: user?.name || 'Administrator',
+          name: user ? `${user.firstName} ${user.lastName}` : 'Administrator',
           email: user?.email || 'admin@verticalhr.com',
           role: user?.role === 'super_admin' ? 'super_admin' : 'super_admin' // Support simulator
         },
@@ -266,7 +266,7 @@ export const BillingAndIntegrations: React.FC = () => {
     setTimeout(() => {
       const simulatedUser = {
         id: user?.id || 'usr-test',
-        name: user?.name || 'Jane Doe',
+        name: user ? `${user.firstName} ${user.lastName}` : 'Jane Doe',
         role: simulatedRole
       };
 

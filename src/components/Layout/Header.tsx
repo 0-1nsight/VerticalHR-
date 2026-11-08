@@ -5,7 +5,11 @@ import { useData } from '../../contexts/DataContext';
 import { TenantSelectorModal } from '../Tenant/TenantSelectorModal';
 import { punchProcessor, WorkSiteLocation } from '../../services/attendance';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onNavigate?: (module: string) => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { user, users, logout, switchUser } = useAuth();
   const { 
     getNotificationsByUser, 
@@ -22,6 +26,8 @@ export const Header: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTenantModal, setShowTenantModal] = useState(false);
   const [punchToast, setPunchToast] = useState<{ message: string; geofence?: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const notifications = user ? getNotificationsByUser(user.id) : [];
   const unreadCount = user ? getUnreadNotificationCount(user.id) : 0;
@@ -104,19 +110,123 @@ export const Header: React.FC = () => {
     return `${Math.floor(diffInMinutes / 1440)} days ago`;
   };
 
+  const appModules = [
+    { id: 'dashboard', name: 'Dashboard & Workspace', category: 'General' },
+    { id: 'employees', name: 'Employee Directory & Roster', category: 'Personnel' },
+    { id: 'organizational-structure', name: 'Org Chart & Account Reporting Line', category: 'Personnel' },
+    { id: 'leave-requests', name: 'Leave Requests & Approvals', category: 'Leave' },
+    { id: 'leave-balance', name: 'Leave Balances & Accrual Ledger', category: 'Leave' },
+    { id: 'attendance', name: 'Attendance & Geofence Verification', category: 'Time & Attendance' },
+    { id: 'timesheets', name: 'Project Timesheets & Overtime', category: 'Time & Attendance' },
+    { id: 'payroll-export', name: 'Jamaican Payroll Reconciliation & S01', category: 'Payroll' },
+    { id: 'performance-reviews', name: 'Performance Reviews & 360 Feedback', category: 'Talent' },
+    { id: 'goals', name: 'Goals & Cascading OKRs', category: 'Talent' },
+    { id: 'hiring-hub', name: 'Hiring, Scorecards & Public Careers', category: 'Recruitment' },
+    { id: 'fica-compliance', name: 'FICA / KYC Financial Screening', category: 'Compliance' },
+    { id: 'documents', name: 'Document Vault & E-Signatures', category: 'Documents' },
+    { id: 'ai-policy-assistant', name: 'AI Policy Assistant (RBAC Grounded)', category: 'AI Assistant' },
+    { id: 'billing-platform', name: 'Subscription Billing, API & SSO Hub', category: 'Platform' },
+    { id: 'launch-readiness', name: 'Launch Readiness, Legal & Universal Migrations', category: 'Launch' },
+    { id: 'audit-trail', name: 'Cryptographic Immutable Audit Trail', category: 'Audit' },
+  ];
+
+  const filteredModules = searchQuery.trim()
+    ? appModules.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    : [];
+
+  const filteredEmployees = searchQuery.trim()
+    ? employees.filter(e => 
+        `${e.personalInfo.firstName} ${e.personalInfo.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.jobInfo.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.jobInfo.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-3.5 relative">
+    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-3.5 relative z-30">
       <div className="flex items-center justify-between">
-        {/* Search Bar */}
-        <div className="flex-1 max-w-md">
+        {/* Search Bar with Instant Result Dropdown */}
+        <div className="flex-1 max-w-md relative">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search employees, departments, or records..."
+              placeholder="Search employees, departments, or modules..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearchResults(true);
+              }}
+              onFocus={() => setShowSearchResults(true)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setShowSearchResults(false);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ×
+              </button>
+            )}
           </div>
+
+          {/* Quick-Jump Dropdown */}
+          {showSearchResults && searchQuery.trim().length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50 text-xs divide-y divide-gray-100">
+              {filteredModules.length > 0 && (
+                <div className="p-2">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 px-2 py-1 block">Modules & Tools</span>
+                  {filteredModules.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        onNavigate?.(m.id);
+                        setShowSearchResults(false);
+                        setSearchQuery('');
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="font-semibold text-gray-800">{m.name}</span>
+                      <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">{m.category}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {filteredEmployees.length > 0 && (
+                <div className="p-2">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 px-2 py-1 block">Employees</span>
+                  {filteredEmployees.map(e => (
+                    <button
+                      key={e.id}
+                      onClick={() => {
+                        onNavigate?.('employees');
+                        setShowSearchResults(false);
+                        setSearchQuery('');
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div>
+                        <div className="font-semibold text-gray-900">{e.personalInfo.firstName} {e.personalInfo.lastName}</div>
+                        <div className="text-[11px] text-gray-500">{e.jobInfo.jobTitle} · {e.jobInfo.department}</div>
+                      </div>
+                      <span className="font-mono text-[10px] text-gray-400">{e.employeeId}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {filteredModules.length === 0 && filteredEmployees.length === 0 && (
+                <div className="p-4 text-center text-gray-400 italic">
+                  No matching modules or employees found for "{searchQuery}".
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Section */}

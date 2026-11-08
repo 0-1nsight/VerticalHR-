@@ -147,6 +147,12 @@ Hire to productive employee lifecycle: job requisitions with salary budgets, mul
      - Made `Org Chart & Hierarchy` directly accessible to all authenticated employee roles under Personnel Information.
    - `src/components/Dashboard/Dashboard.tsx`:
      - Added direct "My Reporting Line & Org Chart" quick actions for both individual employees and managers.
+   - `src/components/Recruitment/HiringOnboardingHub.tsx`:
+     - **Public Careers Portal Preview**: SEO-friendly job listings with department filters and a live applicant intake form with statutory 12-month JDPA consent verification that submits directly into the candidate pipeline.
+     - **Interactive Interview Scorecards**: Real-time multi-dimensional scoring (Technical 35%, Problem Solving 30%, Cultural Alignment 20%, Communication 15%) producing composite ratings and hiring recommendations.
+     - **Tamper-Evident SHA-256 E-Sign Generator**: Official offer letters with cryptographic 64-character audit fingerprints, signer IP, and timestamp verification.
+     - **Final Pay & Exit Settlement Calculator**: Computes pro-rata salaries, unused accrued vacation encashment, asset deductions, and net payable settlements for seamless reconciliation into the Jamaican payroll engine.
+     - **JDPA Statutory Retention Compliance**: Real-time retention countdown and compliance verification badges in candidate profiles.
 
 ### Cumulative Verification & Test Results:
 Executed `npx tsx src/tests/run.ts`:

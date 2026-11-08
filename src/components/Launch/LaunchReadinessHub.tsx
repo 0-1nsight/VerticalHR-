@@ -131,35 +131,42 @@ export const LaunchReadinessHub: React.FC = () => {
           address: {
             street: '12 Trafalgar Road',
             city: 'Kingston',
-            parish: 'St. Andrew',
-            postalCode: '10'
+            state: 'St. Andrew',
+            zipCode: '10',
+            country: 'Jamaica'
+          },
+          emergencyContact: {
+            name: 'Primary Contact',
+            relationship: 'Family',
+            phone: '(876) 555-0101'
           }
         },
         jobInfo: {
           jobTitle: emp.jobTitle,
           department: emp.department,
-          division: emp.department,
           hireDate: emp.hireDate,
           employmentType: 'full_time',
           employmentStatus: 'active',
           workLocation: 'Kingston Headquarters',
-          reportingManager: 'Marcus Vance'
+          reportingManager: 'Marcus Vance',
+          salary: emp.baseSalary
         },
-        compensation: {
-          baseSalary: emp.baseSalary,
-          payFrequency: 'monthly',
-          currency: 'JMD',
-          bankDetails: {
-            bankName: 'National Commercial Bank (NCB)',
-            accountNumber: '••••••••4819',
-            accountType: 'checking',
-            branchCode: '001'
-          }
+        jobHistory: [],
+        qualifications: [],
+        documents: [],
+        bankInfo: {
+          bankName: 'National Commercial Bank (NCB)',
+          accountNumber: '••••••••4819',
+          routingNumber: '001',
+          accountType: 'checking',
+          isVerified: true
         },
-        complianceStatus: 'compliant',
-        leaveBalances: {
-          vacation: { annualEntitlement: 14, currentBalance: 14, accruedThisYear: 1.167, usedThisYear: 0 },
-          sick: { annualEntitlement: 10, currentBalance: 10, usedThisYear: 0 }
+        vettingStatus: {
+          backgroundCheckCompleted: true,
+          backgroundCheckDate: emp.hireDate,
+          policeRecordCheck: true,
+          policeRecordDate: emp.hireDate,
+          referenceChecks: []
         }
       });
     });

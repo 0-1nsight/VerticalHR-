@@ -184,7 +184,7 @@ function App() {
       <Sidebar activeModule={activeModule} onModuleChange={handleModuleChange} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header onNavigate={handleModuleChange} />
         
         <main className="flex-1 overflow-auto bg-slate-50">
           {renderActiveModule()}

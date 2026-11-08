@@ -102,9 +102,10 @@ export async function runPhase0Tests(): Promise<{ passed: boolean; results: stri
       entityId: tenantResult.tenantId,
       entityDescription: 'Tenant provisioned',
       timestamp: t0,
+      ipAddress: '127.0.0.1',
     };
     const b0Hash = await computeAuditHash(GENESIS_HASH, b0Data);
-    auditChain.push({ ...b0Data, previousHash: GENESIS_HASH, currentHash: b0Hash, ipAddress: '127.0.0.1' });
+    auditChain.push({ ...b0Data, previousHash: GENESIS_HASH, currentHash: b0Hash });
 
     // Block 1
     const b1Data = {
@@ -117,9 +118,10 @@ export async function runPhase0Tests(): Promise<{ passed: boolean; results: stri
       entityId: 'emp-101',
       entityDescription: 'Added employee Aaliyah Brown',
       timestamp: t1,
+      ipAddress: '127.0.0.1',
     };
     const b1Hash = await computeAuditHash(b0Hash, b1Data);
-    auditChain.push({ ...b1Data, previousHash: b0Hash, currentHash: b1Hash, ipAddress: '127.0.0.1' });
+    auditChain.push({ ...b1Data, previousHash: b0Hash, currentHash: b1Hash });
 
     // Block 2
     const b2Data = {
@@ -132,9 +134,10 @@ export async function runPhase0Tests(): Promise<{ passed: boolean; results: stri
       entityId: 'emp-101',
       entityDescription: 'Adjusted base salary',
       timestamp: t2,
+      ipAddress: '127.0.0.1',
     };
     const b2Hash = await computeAuditHash(b1Hash, b2Data);
-    auditChain.push({ ...b2Data, previousHash: b1Hash, currentHash: b2Hash, ipAddress: '127.0.0.1' });
+    auditChain.push({ ...b2Data, previousHash: b1Hash, currentHash: b2Hash });
 
     const auditVerifyValid = await verifyAuditChain(auditChain);
     logResult('Audit Chain Cryptographic Integrity', auditVerifyValid.valid && auditVerifyValid.totalVerified === 3);
