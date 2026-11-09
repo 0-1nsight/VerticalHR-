@@ -14,6 +14,7 @@ import {
   getAuthorizedCompensationBands,
   generatePulseSurveyReport,
   assessTalentAndAttritionRisk,
+  getAuthorizedTalentAssessments,
   GoalOkrItem,
   CompensationBand,
   PulseSurveyResponse,
@@ -224,6 +225,47 @@ export async function runPhase5Tests(): Promise<{ passed: boolean; results: stri
       stableProfessional.attritionRisk === 'low';
 
     logResult('9-Box Talent Matrix & Data-Driven Attrition Risk Predictor', talentPassed);
+
+    // ------------------------------------------------------------------------
+    // 6. 9-Box Talent Privacy & Cross-Employee Visibility RBAC Guard Test
+    // ------------------------------------------------------------------------
+    const sampleAssessments = [atRiskStar, stableProfessional];
+    
+    // Test 6A: HR Admin receives full talent pool
+    const hrTalent = getAuthorizedTalentAssessments({
+      userRole: 'hr_admin',
+      allAssessments: sampleAssessments,
+    });
+
+    // Test 6B: Line Manager receives only their direct reports
+    const managerTalent = getAuthorizedTalentAssessments({
+      userRole: 'line_manager',
+      currentEmployeeId: 'mgr-01',
+      directReportIds: ['emp-top-01'], // only atRiskStar
+      allAssessments: sampleAssessments,
+    });
+
+    // Test 6C: Regular Employee is strictly BLOCKED from other employees' assessments
+    let employeeBlocked = false;
+    try {
+      getAuthorizedTalentAssessments({
+        userRole: 'employee',
+        currentEmployeeId: 'emp-001',
+        allAssessments: sampleAssessments,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes('Access Denied')) {
+        employeeBlocked = true;
+      }
+    }
+
+    const privacyPassed =
+      hrTalent.length === 2 &&
+      managerTalent.length === 1 &&
+      managerTalent[0].employeeId === 'emp-top-01' &&
+      employeeBlocked;
+
+    logResult('9-Box Talent Privacy & Cross-Employee Visibility RBAC Guard', privacyPassed);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     results.push(`FATAL ERROR: ${msg}`);

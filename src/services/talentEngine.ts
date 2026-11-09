@@ -288,3 +288,41 @@ export function assessTalentAndAttritionRisk(params: {
     attritionDrivers,
   };
 }
+
+/**
+ * Strict RBAC & Privacy Guard for 9-Box Talent Calibration & Predictive Attrition Data.
+ * Non-privileged employees ('employee', 'contractor') must NEVER see company-wide talent
+ * assessments, compa-ratios, or attrition flight risks of other employees.
+ * - HR Admins, Super Admins, Directors: full access to organization talent pool.
+ * - Line Managers / Supervisors: access restricted strictly to their direct subordinates.
+ * - Regular Employees: access denied for company-wide data; at most own profile if enabled.
+ */
+export function getAuthorizedTalentAssessments(params: {
+  userRole: string;
+  currentEmployeeId?: string;
+  directReportIds?: string[];
+  allAssessments: TalentAssessment[];
+}): TalentAssessment[] {
+  const { userRole, directReportIds = [], allAssessments } = params;
+
+  // 1. HR Admins & Executive Leadership: Company-wide talent calibration access
+  if (['super_admin', 'hr_admin', 'admin', 'hr_manager', 'finance_director'].includes(userRole)) {
+    return [...allAssessments];
+  }
+
+  // 2. Line Managers & Supervisors: Restricted exclusively to direct subordinates
+  if (['line_manager', 'supervisor'].includes(userRole)) {
+    const authorizedIds = new Set(directReportIds);
+    return allAssessments.filter(a => authorizedIds.has(a.employeeId));
+  }
+
+  // 3. Regular Employees: Strictly BLOCKED from viewing other employees
+  if (userRole === 'employee' || userRole === 'contractor') {
+    throw new Error(
+      `Access Denied: Role '${userRole}' is not authorized to access confidential 9-box talent assessments or attrition flight risk data of other employees.`
+    );
+  }
+
+  throw new Error(`Access Denied: Role '${userRole}' is not authorized to access confidential talent assessments.`);
+}
+

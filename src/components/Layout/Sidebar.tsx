@@ -396,18 +396,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Toggle Collapse Button in Header */}
+        {/* The Single Collapse / Expand Widget */}
         <button
           type="button"
           onClick={toggleCollapse}
-          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+          className={`p-1.5 rounded-lg border border-gray-200 transition-colors shrink-0 ${
+            isCollapsed 
+              ? 'text-gray-600 hover:text-blue-600 hover:bg-blue-50 bg-gray-50' 
+              : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100 bg-white'
+          }`}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
-            <PanelLeftOpen className="w-4 h-4 text-gray-600" />
+            <PanelLeftOpen className="w-4 h-4" />
           ) : (
-            <PanelLeftClose className="w-5 h-5 text-gray-500" />
+            <PanelLeftClose className="w-4 h-4" />
           )}
         </button>
       </div>
@@ -418,27 +422,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isCollapsed ? renderCollapsedItem(item) : renderExpandedItem(item)
         )}
       </nav>
-
-      {/* Sidebar Footer Bar */}
-      <div className="border-t border-gray-200 p-2.5 bg-slate-50/70 mt-auto">
-        <button
-          type="button"
-          onClick={toggleCollapse}
-          className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg border border-transparent hover:border-gray-200 transition-all shadow-2xs ${
-            isCollapsed ? 'px-1' : 'px-3'
-          }`}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <PanelLeftOpen className="w-4 h-4 text-gray-600" />
-          ) : (
-            <>
-              <PanelLeftClose className="w-4 h-4 text-gray-500" />
-              <span className="truncate">Collapse Sidebar</span>
-            </>
-          )}
-        </button>
-      </div>
     </aside>
   );
 };

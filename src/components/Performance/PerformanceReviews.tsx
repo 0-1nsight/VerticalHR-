@@ -26,6 +26,7 @@ import {
   getAuthorizedCompensationBands, 
   generatePulseSurveyReport, 
   assessTalentAndAttritionRisk,
+  getAuthorizedTalentAssessments,
   CompensationBand,
   PulseSurveyResponse
 } from '../../services/talentEngine';
@@ -109,8 +110,18 @@ export const PerformanceReviews: React.FC = () => {
   ];
   const composite360 = calculate360ReviewScore(sample360Evaluations);
 
-  // 9-Box Talent Assessments
-  const talentAssessments = employees.map((emp, idx) => {
+  // Determine direct reports for managers
+  const userEmpId = currentEmp?.id || user?.employeeId;
+  const directReportIds = employees
+    .filter(e => e.jobInfo.reportsTo === userEmpId || e.jobInfo.supervisorId === userEmpId || (currentEmp && e.jobInfo.reportsTo === currentEmp.employeeId))
+    .map(e => e.id);
+
+  // Check RBAC privileges: non-manager employees must NEVER see other employees' 9-box or compensation
+  const canViewTalentMatrix = user?.role ? ['super_admin', 'hr_admin', 'admin', 'hr_manager', 'line_manager', 'supervisor'].includes(user.role) : false;
+  const canViewCompensation = user?.role ? ['super_admin', 'hr_admin', 'admin', 'finance_director'].includes(user.role) : false;
+
+  // 9-Box Talent Assessments (Raw pool)
+  const allTalentAssessments = employees.map((emp, idx) => {
     const perf = (idx % 3 === 0 ? 3 : idx % 2 === 0 ? 2 : 1) as 1 | 2 | 3;
     const pot = (idx % 2 === 0 ? 3 : 2) as 1 | 2 | 3;
     const compa = idx === 0 ? 0.84 : 1.05; // first employee is underpaid
@@ -127,6 +138,20 @@ export const PerformanceReviews: React.FC = () => {
       salaryCompaRatio: compa,
     });
   });
+
+  // Scoped Talent Assessments guarded by RBAC
+  let authorizedTalentAssessments: ReturnType<typeof assessTalentAndAttritionRisk>[] = [];
+  let talentAuthError: string | null = null;
+  try {
+    authorizedTalentAssessments = getAuthorizedTalentAssessments({
+      userRole: user?.role || 'employee',
+      currentEmployeeId: currentEmp?.id,
+      directReportIds,
+      allAssessments: allTalentAssessments,
+    });
+  } catch (err: unknown) {
+    talentAuthError = err instanceof Error ? err.message : String(err);
+  }
 
   // Pulse Survey with k-anonymity demonstration
   const pulseResponses: PulseSurveyResponse[] = [
@@ -215,15 +240,22 @@ export const PerformanceReviews: React.FC = () => {
           360° Multi-Rater Feedback
         </button>
 
-        <button
-          onClick={() => setActiveMainTab('9box_matrix')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-            activeMainTab === '9box_matrix' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <Grid className="w-4 h-4" />
-          9-Box Talent Matrix & Attrition
-        </button>
+        {canViewTalentMatrix && (
+          <button
+            onClick={() => setActiveMainTab('9box_matrix')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
+              activeMainTab === '9box_matrix' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+            9-Box Talent Matrix & Attrition
+            {['line_manager', 'supervisor'].includes(user?.role || '') && (
+              <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full font-bold">
+                My Direct Reports ({authorizedTalentAssessments.length})
+              </span>
+            )}
+          </button>
+        )}
 
         <button
           onClick={() => setActiveMainTab('pulse_surveys')}
@@ -235,15 +267,17 @@ export const PerformanceReviews: React.FC = () => {
           Pulse Surveys (k-Anonymity)
         </button>
 
-        <button
-          onClick={() => setActiveMainTab('compensation')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
-            activeMainTab === 'compensation' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <DollarSign className="w-4 h-4" />
-          Compensation Bands (RBAC)
-        </button>
+        {canViewCompensation && (
+          <button
+            onClick={() => setActiveMainTab('compensation')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
+              activeMainTab === 'compensation' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            Compensation Bands (RBAC)
+          </button>
+        )}
       </div>
 
       {/* TAB 1: Review Cycles */}
@@ -394,91 +428,132 @@ export const PerformanceReviews: React.FC = () => {
 
       {/* TAB 3: 9-Box Talent Matrix */}
       {activeMainTab === '9box_matrix' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6">
-          <div className="border-b pb-4">
-            <h2 className="text-xl font-bold text-gray-900">9-Box Talent Matrix & Predictive Attrition Flight Risk</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              Data-driven talent distribution mapping Performance vs Potential with automated attrition risk indicators
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
-            {/* 9 Box Categories Preview */}
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <span className="text-emerald-800 uppercase font-bold text-[11px] block">Top Talent (Stars)</span>
-              <p className="text-2xl font-bold text-emerald-900 mt-1">
-                {talentAssessments.filter(t => t.boxCategory === 'star').length} Personnel
+        !canViewTalentMatrix || talentAuthError ? (
+          <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-2xs text-center max-w-lg mx-auto space-y-4 my-8">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Confidential Management Talent Assessment</h2>
+              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                {talentAuthError || "Company-wide 9-Box talent matrix evaluations, salary compa-ratios, and predictive attrition risks are confidential and restricted strictly to People Managers and Human Resources Administrators under corporate data privacy standards."}
               </p>
-              <span className="text-[11px] text-emerald-700 block mt-1">High Performance · High Potential</span>
+            </div>
+            <button
+              onClick={() => setActiveMainTab('reviews')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+            >
+              Return to My Reviews
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6">
+            <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">9-Box Talent Matrix & Predictive Attrition Flight Risk</h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  {['line_manager', 'supervisor'].includes(user?.role || '') 
+                    ? `Confidential talent distribution for your direct reporting line (${authorizedTalentAssessments.length} personnel)`
+                    : 'Company-wide calibrated talent distribution mapping Performance vs Potential with attrition risk indicators'
+                  }
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Management Privacy Active
+              </span>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <span className="text-blue-800 uppercase font-bold text-[11px] block">Core Growth Players</span>
-              <p className="text-2xl font-bold text-blue-900 mt-1">
-                {talentAssessments.filter(t => t.boxCategory === 'core_player' || t.boxCategory === 'high_performer').length} Personnel
-              </p>
-              <span className="text-[11px] text-blue-700 block mt-1">Solid Contributors · Steady Growth</span>
-            </div>
+            {authorizedTalentAssessments.length === 0 ? (
+              <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-gray-800">No Direct Subordinate Evaluations</h3>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
+                  You currently have no direct reporting employees assigned to your manager profile for talent calibration.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
+                  {/* 9 Box Categories Preview */}
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <span className="text-emerald-800 uppercase font-bold text-[11px] block">Top Talent (Stars)</span>
+                    <p className="text-2xl font-bold text-emerald-900 mt-1">
+                      {authorizedTalentAssessments.filter(t => t.boxCategory === 'star').length} Personnel
+                    </p>
+                    <span className="text-[11px] text-emerald-700 block mt-1">High Performance · High Potential</span>
+                  </div>
 
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
-              <span className="text-rose-800 uppercase font-bold text-[11px] block">Elevated Flight Risk</span>
-              <p className="text-2xl font-bold text-rose-900 mt-1">
-                {talentAssessments.filter(t => t.attritionRisk === 'critical' || t.attritionRisk === 'high').length} Personnel
-              </p>
-              <span className="text-[11px] text-rose-700 block mt-1">Compa-ratio &lt;90% or 24+ mo stagnant</span>
-            </div>
-          </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <span className="text-blue-800 uppercase font-bold text-[11px] block">Core Growth Players</span>
+                    <p className="text-2xl font-bold text-blue-900 mt-1">
+                      {authorizedTalentAssessments.filter(t => t.boxCategory === 'core_player' || t.boxCategory === 'high_performer').length} Personnel
+                    </p>
+                    <span className="text-[11px] text-blue-700 block mt-1">Solid Contributors · Steady Growth</span>
+                  </div>
 
-          {/* Talent Roster Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
-                  <th className="py-2.5 px-3">Employee</th>
-                  <th className="py-2.5 px-3">Department</th>
-                  <th className="py-2.5 px-3 text-center">9-Box Quadrant</th>
-                  <th className="py-2.5 px-3 text-center">Attrition Risk</th>
-                  <th className="py-2.5 px-3">Data-Driven Flight Risk Drivers</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {talentAssessments.map(t => (
-                  <tr key={t.employeeId} className="hover:bg-slate-50">
-                    <td className="py-2.5 px-3 font-bold text-gray-900">{t.employeeName}</td>
-                    <td className="py-2.5 px-3 text-gray-600">{t.department}</td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
-                        t.boxCategory === 'star' ? 'bg-emerald-100 text-emerald-800' :
-                        t.boxCategory === 'high_performer' ? 'bg-blue-100 text-blue-800' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {t.boxCategory.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        t.attritionRisk === 'critical' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                        t.attritionRisk === 'high' ? 'bg-amber-100 text-amber-800' :
-                        'bg-emerald-50 text-emerald-700'
-                      }`}>
-                        {t.attritionRisk} Risk
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-gray-600 text-[11px]">
-                      {t.attritionDrivers.length > 0 ? (
-                        <ul className="list-disc list-inside space-y-0.5">
-                          {t.attritionDrivers.map((d, i) => <li key={i}>{d}</li>)}
-                        </ul>
-                      ) : (
-                        <span className="text-gray-400">Stable compensation & promotion cadence</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
+                    <span className="text-rose-800 uppercase font-bold text-[11px] block">Elevated Flight Risk</span>
+                    <p className="text-2xl font-bold text-rose-900 mt-1">
+                      {authorizedTalentAssessments.filter(t => t.attritionRisk === 'critical' || t.attritionRisk === 'high').length} Personnel
+                    </p>
+                    <span className="text-[11px] text-rose-700 block mt-1">Compa-ratio &lt;90% or 24+ mo stagnant</span>
+                  </div>
+                </div>
+
+                {/* Talent Roster Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="py-2.5 px-3">Employee</th>
+                        <th className="py-2.5 px-3">Department</th>
+                        <th className="py-2.5 px-3 text-center">9-Box Quadrant</th>
+                        <th className="py-2.5 px-3 text-center">Attrition Risk</th>
+                        <th className="py-2.5 px-3">Data-Driven Flight Risk Drivers</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {authorizedTalentAssessments.map(t => (
+                        <tr key={t.employeeId} className="hover:bg-slate-50">
+                          <td className="py-2.5 px-3 font-bold text-gray-900">{t.employeeName}</td>
+                          <td className="py-2.5 px-3 text-gray-600">{t.department}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
+                              t.boxCategory === 'star' ? 'bg-emerald-100 text-emerald-800' :
+                              t.boxCategory === 'high_performer' ? 'bg-blue-100 text-blue-800' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {t.boxCategory.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              t.attritionRisk === 'critical' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                              t.attritionRisk === 'high' ? 'bg-amber-100 text-amber-800' :
+                              'bg-emerald-50 text-emerald-700'
+                            }`}>
+                              {t.attritionRisk} Risk
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-gray-600 text-[11px]">
+                            {t.attritionDrivers.length > 0 ? (
+                              <ul className="list-disc list-inside space-y-0.5">
+                                {t.attritionDrivers.map((d, i) => <li key={i}>{d}</li>)}
+                              </ul>
+                            ) : (
+                              <span className="text-gray-400">Stable compensation & promotion cadence</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        )
       )}
 
       {/* TAB 4: Pulse Surveys with k-Anonymity */}

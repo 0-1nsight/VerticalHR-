@@ -200,11 +200,7 @@ function App() {
       />
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <Header 
-          onNavigate={handleModuleChange}
-          onToggleSidebar={handleToggleSidebar}
-          isSidebarCollapsed={sidebarCollapsed}
-        />
+        <Header onNavigate={handleModuleChange} />
         
         <main className="flex-1 overflow-auto bg-slate-50">
           {renderActiveModule()}
