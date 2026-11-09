@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { calculateWorkDaysExcludingHolidays } from '../../services/leaveEngine';
+import { calculateWorkingDays } from '../../services/leaveEngine';
 
 export const leaveRouter = Router();
 
@@ -28,7 +28,7 @@ leaveRouter.post('/requests', (req: AuthenticatedRequest, res: Response) => {
     return res.status(400).json({ error: 'Missing mandatory leave fields' });
   }
 
-  const { workDays } = calculateWorkDaysExcludingHolidays(startDate, endDate, 2026);
+  const workDays = calculateWorkingDays(startDate, endDate);
 
   const newRequest = {
     id: `lr-${Date.now()}`,

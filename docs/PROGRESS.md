@@ -5,14 +5,46 @@
 - **Phase 1: Core HR, documents and self-service** — COMPLETED & VERIFIED.
 - **Phase 2: Leave management** — COMPLETED & VERIFIED.
 - **Phase 3: Time and attendance** — COMPLETED & VERIFIED.
-- **Phase 4: Jamaican Payroll Engine** — COMPLETED & VERIFIED.
+- **Phase 4: Jamaican Payroll Engine** — engine tests exist; payroll API is disabled pending a real, persistent backend.
 - **Phase 5: Performance, talent and engagement** — COMPLETED & VERIFIED.
 - **Phase 6: Recruiting, onboarding & User-Centric Org Chart** — COMPLETED & VERIFIED.
 - **Phase 7: FICA/KYC compliance center (Financial Sector Differentiator)** — COMPLETED & VERIFIED.
 - **Phase 8: Platform, billing, integrations and AI** — COMPLETED & VERIFIED.
 - **Phase 9: Launch readiness, JDPA Legal, Universal Migrations, DR & Production Audit** — COMPLETED & VERIFIED.
-- All cumulative Phase 0 through Phase 9 automated acceptance tests passing (62/62 tests green, 100% complete).
-- Production Status: **CERTIFIED PRODUCTION READY & LIVE ON PORT 3000**.
+- The cumulative engine acceptance suite passes, but this does not verify the API routes or production readiness.
+- Production Status: **NOT PRODUCTION READY**.
+
+## Current Runtime Status
+
+### Done
+- Fixed the leave route's import to use the existing `calculateWorkingDays` export.
+- Unmounted the payroll API router and removed its unavailable endpoints from `/api/docs`.
+- Unmounted the audit API router because it imported a missing service export; removed its unavailable endpoints from `/api/docs`.
+- Restored Vite 5, which is compatible with the project's installed React plugin.
+- Verified `npm run dev`, `GET /`, `GET /api/health`, and `GET /api/docs`.
+- Verified `npm run build` succeeds.
+
+### Not done
+- Payroll and audit APIs are unavailable until their routes have real persistence and are implemented and verified.
+- The running API does not yet use PostgreSQL; other feature routes still require real persistence before being treated as production-ready.
+
+### Known issues
+- Docker Desktop is not installed and `DATABASE_URL` is not configured; PostgreSQL-backed functionality is unavailable.
+- Payroll and audit engine modules exist, but their API routers are not mounted.
+- The production build reports a large JavaScript chunk warning.
+
+### Decisions made
+- Disable payroll and audit API routers rather than exposing broken endpoints or adding placeholder exports.
+- Keep Vite on the supported major version instead of the incompatible Vite 8 upgrade.
+
+### Human inputs still needed
+- Install and start Docker Desktop, or configure a real PostgreSQL server through the local `.env`, before database-backed development.
+
+### How to run and verify
+- Install dependencies with `npm install`.
+- Start the application with `npm run dev` and open `http://localhost:3000`.
+- Verify `GET /api/health` reports `payroll: "disabled"` and `GET /api/docs` omits payroll and audit endpoints.
+- `npm run build` creates the production frontend bundle; the current server's production mode serves `dist`.
 
 ---
 
@@ -334,5 +366,3 @@ Executed `npx tsx src/tests/run.ts`:
 - `PASS: Disaster Recovery Point-In-Time Restore Drill (RPO <= 60s & RTO <= 300s)`
 - `PASS: In-App Statutory Legal Center & JDPA 2020 ROPA Compliance Manifest`
 - **ALL CUMULATIVE PHASE 0 THROUGH 9 TESTS PASSED (62/62 GREEN, 100% COMPLETE).**
-
-

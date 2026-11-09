@@ -5,9 +5,7 @@ import { employeesRouter } from './routes/employees';
 import { performanceRouter } from './routes/performance';
 import { leaveRouter } from './routes/leave';
 import { attendanceRouter } from './routes/attendance';
-import { payrollRouter } from './routes/payroll';
 import { complianceRouter } from './routes/compliance';
-import { auditRouter } from './routes/audit';
 
 export const apiRouter = Router();
 
@@ -18,7 +16,7 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     service: 'VerticalHRM Multi-Tenant REST API',
     version: '1.0.0',
-    statutoryEngine: 'Jamaica Tax Administration (TAJ) 2026 Compliant',
+    payroll: 'disabled',
   });
 });
 
@@ -41,12 +39,8 @@ apiRouter.get('/docs', (_req: Request, res: Response) => {
       { method: 'GET', path: '/api/leave/balances', description: 'Retrieve immutable ledger balances' },
       { method: 'POST', path: '/api/attendance/punch', description: 'Record clock-in/out with GPS Haversine verification' },
       { method: 'GET', path: '/api/attendance/records', description: 'Daily attendance logs' },
-      { method: 'POST', path: '/api/payroll/calculate', description: 'Calculate Jamaican statutory deductions (PAYE, NIS, NHT, Ed Tax, HEART)' },
-      { method: 'GET', path: '/api/payroll/s01-schedule', description: 'Tax Administration Jamaica monthly S01 return' },
       { method: 'GET', path: '/api/compliance/summary', description: 'FICA / KYC compliance metrics' },
       { method: 'POST', path: '/api/compliance/screen', description: 'Screen individual against OFAC & Jamaica FID sanctions' },
-      { method: 'GET', path: '/api/audit/logs', description: 'Query immutable cryptographic audit logs' },
-      { method: 'POST', path: '/api/audit/verify', description: 'Verify SHA-256 audit chain integrity' },
     ],
   });
 });
@@ -60,6 +54,4 @@ apiRouter.use('/employees', employeesRouter);
 apiRouter.use('/performance', performanceRouter);
 apiRouter.use('/leave', leaveRouter);
 apiRouter.use('/attendance', attendanceRouter);
-apiRouter.use('/payroll', payrollRouter);
 apiRouter.use('/compliance', complianceRouter);
-apiRouter.use('/audit', auditRouter);
