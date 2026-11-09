@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -23,13 +23,17 @@ import {
   History,
   CreditCard,
   Sparkles,
-  Rocket
+  Rocket,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-interface SidebarProps {
+export interface SidebarProps {
   activeModule: string;
   onModuleChange: (module: string) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface MenuItem {
@@ -149,9 +153,49 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onModuleChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  activeModule, 
+  onModuleChange,
+  isCollapsed: externalCollapsed,
+  onToggleCollapse: externalToggleCollapse
+}) => {
   const { user } = useAuth();
+  const [internalCollapsed, setInternalCollapsed] = useState(() => {
+    return localStorage.getItem('vhr_sidebar_collapsed') === 'true';
+  });
+
+  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
+
+  const toggleCollapse = () => {
+    if (externalToggleCollapse) {
+      externalToggleCollapse();
+    } else {
+      setInternalCollapsed(prev => {
+        const next = !prev;
+        localStorage.setItem('vhr_sidebar_collapsed', String(next));
+        return next;
+      });
+    }
+  };
+
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['pim', 'leave']));
+  const [flyoutOpenItemId, setFlyoutOpenItemId] = useState<string | null>(null);
+  const flyoutRef = useRef<HTMLDivElement | null>(null);
+
+  // Close flyout on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (flyoutRef.current && !flyoutRef.current.contains(event.target as Node)) {
+        setFlyoutOpenItemId(null);
+      }
+    };
+    if (flyoutOpenItemId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [flyoutOpenItemId]);
 
   const toggleExpanded = (itemId: string) => {
     const newExpanded = new Set(expandedItems);
@@ -172,36 +216,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onModuleChange }
     return item.roles.includes(user.role);
   };
 
-  const renderMenuItem = (item: MenuItem, level = 0) => {
+  const getItemLabel = (m: MenuItem) => {
+    if (user?.role === 'employee') {
+      if (m.id === 'pim') return 'My Profile & Employment';
+      if (m.id === 'employees') return 'My Profile & Information';
+      if (m.id === 'approvals-inbox') return 'My Requests & Status';
+      if (m.id === 'performance-reviews') return 'My Performance Reviews';
+      if (m.id === 'goals') return 'My Goals & OKRs';
+      if (m.id === 'leave-requests') return 'My Leave Requests';
+      if (m.id === 'timesheets') return 'My Timesheets';
+      if (m.id === 'attendance') return 'My Attendance Log';
+    }
+    return m.label;
+  };
+
+  // Render when expanded
+  const renderExpandedItem = (item: MenuItem, level = 0) => {
     if (!hasAccess(item)) return null;
 
     const isExpanded = expandedItems.has(item.id);
     const isActive = activeModule === item.id;
     const hasChildren = item.children && item.children.length > 0;
 
-    const getItemLabel = (m: MenuItem) => {
-      if (user?.role === 'employee') {
-        if (m.id === 'pim') return 'My Profile & Employment';
-        if (m.id === 'employees') return 'My Profile & Information';
-        if (m.id === 'approvals-inbox') return 'My Requests & Status';
-        if (m.id === 'performance-reviews') return 'My Performance Reviews';
-        if (m.id === 'goals') return 'My Goals & OKRs';
-        if (m.id === 'leave-requests') return 'My Leave Requests';
-        if (m.id === 'timesheets') return 'My Timesheets';
-        if (m.id === 'attendance') return 'My Attendance Log';
-      }
-      return m.label;
-    };
-
     return (
       <div key={item.id}>
         <div
-          className={`flex items-center px-4 py-2 cursor-pointer transition-colors duration-200 ${
-            level === 0 ? 'text-sm font-medium' : 'text-sm ml-4'
+          className={`flex items-center px-4 py-2.5 cursor-pointer transition-colors duration-150 select-none ${
+            level === 0 ? 'text-xs font-semibold' : 'text-xs ml-4 py-2 font-medium'
           } ${
             isActive 
-              ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600 font-bold' 
+              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
           }`}
           onClick={() => {
             if (hasChildren) {
@@ -211,22 +256,114 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onModuleChange }
             }
           }}
         >
-          <span className="mr-3">{item.icon}</span>
-          <span className="flex-1">{getItemLabel(item)}</span>
+          <span className="mr-3 shrink-0">{item.icon}</span>
+          <span className="flex-1 truncate">{getItemLabel(item)}</span>
           {hasChildren && (
-            <span className="ml-2">
+            <span className="ml-2 shrink-0 text-gray-400">
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3.5 h-3.5" />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               )}
             </span>
           )}
         </div>
         
         {hasChildren && isExpanded && (
-          <div className="bg-gray-50">
-            {item.children?.map(child => renderMenuItem(child, level + 1))}
+          <div className="bg-slate-50/70 border-l border-gray-100 ml-4 pl-1">
+            {item.children?.map(child => renderExpandedItem(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render when collapsed
+  const renderCollapsedItem = (item: MenuItem) => {
+    if (!hasAccess(item)) return null;
+
+    const hasChildren = Boolean(item.children && item.children.length > 0);
+    const accessibleChildren = (item.children || []).filter(c => hasAccess(c));
+    const isDirectActive = activeModule === item.id;
+    const isChildActive = accessibleChildren.some(c => c.id === activeModule);
+    const isActive = isDirectActive || isChildActive;
+    const isFlyoutOpen = flyoutOpenItemId === item.id;
+
+    const handleClick = () => {
+      if (hasChildren) {
+        setFlyoutOpenItemId(prev => prev === item.id ? null : item.id);
+      } else {
+        onModuleChange(item.id);
+        setFlyoutOpenItemId(null);
+      }
+    };
+
+    return (
+      <div key={item.id} className="relative group flex justify-center py-1">
+        <button
+          type="button"
+          onClick={handleClick}
+          title={getItemLabel(item)}
+          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-150 relative cursor-pointer ${
+            isActive
+              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300/50'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          }`}
+          aria-label={getItemLabel(item)}
+        >
+          <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
+
+          {/* Child active subtle dot */}
+          {isChildActive && (
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-400 border-2 border-white rounded-full" />
+          )}
+        </button>
+
+        {/* Hover Tooltip (when no children and flyout is closed) */}
+        {!hasChildren && (
+          <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap z-50 pointer-events-none">
+            {getItemLabel(item)}
+            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+          </div>
+        )}
+
+        {/* Hover/Click Flyout Popover for Categories with Children */}
+        {hasChildren && (
+          <div 
+            className={`absolute left-full ml-3 top-0 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 transition-all ${
+              isFlyoutOpen ? 'block' : 'hidden group-hover:block'
+            }`}
+          >
+            <div className="px-3.5 py-2 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-900">{getItemLabel(item)}</span>
+              <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                {accessibleChildren.length} items
+              </span>
+            </div>
+
+            <div className="py-1 max-h-80 overflow-y-auto">
+              {accessibleChildren.map(child => {
+                const isChildCurrent = activeModule === child.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => {
+                      onModuleChange(child.id);
+                      setFlyoutOpenItemId(null);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
+                      isChildCurrent
+                        ? 'bg-blue-50 text-blue-700 font-bold'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium'
+                    }`}
+                  >
+                    <span className="text-gray-500 shrink-0">{child.icon}</span>
+                    <span className="truncate">{getItemLabel(child)}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -234,22 +371,74 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onModuleChange }
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg h-full overflow-y-auto">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+    <aside 
+      ref={flyoutRef}
+      className={`bg-white shadow-md border-r border-gray-200 h-full flex flex-col transition-all duration-300 ease-in-out shrink-0 z-20 ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* Sidebar Header */}
+      <div className={`border-b border-gray-200 flex items-center transition-all ${
+        isCollapsed ? 'p-3 flex-col justify-center gap-2' : 'p-4 justify-between'
+      }`}>
+        <div 
+          onClick={isCollapsed ? toggleCollapse : undefined}
+          className={`flex items-center space-x-3 overflow-hidden ${isCollapsed ? 'cursor-pointer' : ''}`}
+        >
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-xs hover:bg-blue-700 transition-colors">
             <Building className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">VerticalHRM</h1>
-            <p className="text-sm text-gray-500">HR Management</p>
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0">
+              <h1 className="text-base font-bold text-gray-900 truncate">VerticalHRM</h1>
+              <p className="text-[11px] text-gray-500 truncate font-medium">HR Management</p>
+            </div>
+          )}
         </div>
+
+        {/* Toggle Collapse Button in Header */}
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="w-4 h-4 text-gray-600" />
+          ) : (
+            <PanelLeftClose className="w-5 h-5 text-gray-500" />
+          )}
+        </button>
       </div>
       
-      <nav className="mt-6">
-        {menuItems.map(item => renderMenuItem(item))}
+      {/* Navigation List */}
+      <nav className={`mt-3 flex-1 overflow-y-auto ${isCollapsed ? 'px-2 overflow-x-visible' : 'px-1'}`}>
+        {menuItems.map(item => 
+          isCollapsed ? renderCollapsedItem(item) : renderExpandedItem(item)
+        )}
       </nav>
-    </div>
+
+      {/* Sidebar Footer Bar */}
+      <div className="border-t border-gray-200 p-2.5 bg-slate-50/70 mt-auto">
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg border border-transparent hover:border-gray-200 transition-all shadow-2xs ${
+            isCollapsed ? 'px-1' : 'px-3'
+          }`}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="w-4 h-4 text-gray-600" />
+          ) : (
+            <>
+              <PanelLeftClose className="w-4 h-4 text-gray-500" />
+              <span className="truncate">Collapse Sidebar</span>
+            </>
+          )}
+        </button>
+      </div>
+    </aside>
   );
 };

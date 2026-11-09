@@ -41,6 +41,17 @@ function App() {
   const [activeModule, setActiveModule] = useState('dashboard');
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('vhr_sidebar_collapsed') === 'true';
+  });
+
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('vhr_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   const handleAddEmployee = () => {
     setEditingEmployee(undefined);
@@ -181,10 +192,19 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar activeModule={activeModule} onModuleChange={handleModuleChange} />
+      <Sidebar 
+        activeModule={activeModule} 
+        onModuleChange={handleModuleChange}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
+      />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onNavigate={handleModuleChange} />
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <Header 
+          onNavigate={handleModuleChange}
+          onToggleSidebar={handleToggleSidebar}
+          isSidebarCollapsed={sidebarCollapsed}
+        />
         
         <main className="flex-1 overflow-auto bg-slate-50">
           {renderActiveModule()}

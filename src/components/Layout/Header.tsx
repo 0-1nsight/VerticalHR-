@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, LogOut, LogIn, MapPin, Settings, ChevronDown, Building, CheckCircle, CheckCircle2 } from 'lucide-react';
+import { Bell, Search, User, LogOut, LogIn, MapPin, Settings, ChevronDown, Building, CheckCircle, CheckCircle2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TenantSelectorModal } from '../Tenant/TenantSelectorModal';
@@ -7,9 +7,11 @@ import { punchProcessor, WorkSiteLocation } from '../../services/attendance';
 
 interface HeaderProps {
   onNavigate?: (module: string) => void;
+  onToggleSidebar?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, onToggleSidebar, isSidebarCollapsed }) => {
   const { user, users, logout, switchUser } = useAuth();
   const { 
     getNotificationsByUser, 
@@ -146,8 +148,25 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-3.5 relative z-30">
       <div className="flex items-center justify-between">
-        {/* Search Bar with Instant Result Dropdown */}
-        <div className="flex-1 max-w-md relative">
+        {/* Sidebar Toggle & Search Bar with Instant Result Dropdown */}
+        <div className="flex items-center gap-3 flex-1 max-w-lg">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label="Toggle sidebar"
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-5 h-5 text-gray-700" />
+              ) : (
+                <PanelLeftClose className="w-5 h-5 text-gray-700" />
+              )}
+            </button>
+          )}
+
+          <div className="flex-1 relative">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -228,6 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             </div>
           )}
         </div>
+      </div>
 
         {/* Right Section */}
         <div className="flex items-center space-x-3">
