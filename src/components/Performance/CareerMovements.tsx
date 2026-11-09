@@ -167,7 +167,7 @@ export const CareerMovements: React.FC = () => {
           {careerMovements.map((movement) => {
             const emp = getEmployee(movement.employeeId);
             return (
-              <div key={movement.id} className="relative pl-6 pb-6 border-l-2 border-blue-500 last:pb-0">
+              <div key={movement.id} className="relative pl-6 pb-6 border-l-2 border-blue-500 last:border-l-0 last:pb-0">
                 <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-xs"></div>
 
                 <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">

@@ -362,31 +362,49 @@ export const OrganizationalStructure: React.FC = () => {
             {/* Vertical stem from parent */}
             <div className="w-0.5 h-6 bg-gray-300" />
 
-            {/* Horizontal branch spanning reports */}
-            <div className="flex justify-center relative">
-              {reports.length > 1 && (
-                <div 
-                  className="absolute top-0 h-0.5 bg-gray-300" 
-                  style={{
-                    left: '50%',
-                    right: '50%',
-                    transform: `translateX(-50%)`,
-                    width: `calc(100% - ${288 / reports.length}px)`
-                  }}
-                />
-              )}
-
-              {/* Subordinate columns */}
-              <div className="flex gap-6 pt-6 relative">
-                {reports.map((reportEmp) => (
-                  <div key={reportEmp.id} className="relative flex flex-col items-center">
-                    {/* Vertical drop line to child */}
-                    <div className="absolute -top-6 w-0.5 h-6 bg-gray-300" />
-                    {renderTreeNode(reportEmp, depth + 1)}
-                  </div>
-                ))}
+            {reports.length === 1 ? (
+              /* Single subordinate: direct vertical line */
+              <div className="flex flex-col items-center">
+                <div className="w-0.5 h-6 bg-gray-300" />
+                <div className="px-3">
+                  {renderTreeNode(reports[0], depth + 1)}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Multiple subordinates: curved branch connectors */
+              <div className="flex items-start justify-center relative">
+                {reports.map((reportEmp, idx) => {
+                  const isFirst = idx === 0;
+                  const isLast = idx === reports.length - 1;
+
+                  return (
+                    <div key={reportEmp.id} className="flex flex-col items-center relative">
+                      {/* Branch connector above child */}
+                      <div className="w-full h-8 relative">
+                        {isFirst ? (
+                          /* First employee: curve from right sibling direction down into employee center */
+                          <div className="absolute top-0 right-0 left-1/2 bottom-0 border-t-2 border-l-2 border-gray-300 rounded-tl-2xl" />
+                        ) : isLast ? (
+                          /* Last employee: curve from left sibling direction down into employee center with NO line going continuously */
+                          <div className="absolute top-0 left-0 right-1/2 bottom-0 border-t-2 border-r-2 border-gray-300 rounded-tr-2xl" />
+                        ) : (
+                          /* Middle employee: continuous horizontal line with vertical drop line */
+                          <>
+                            <div className="absolute top-0 left-0 right-0 border-t-2 border-gray-300" />
+                            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-gray-300" />
+                          </>
+                        )}
+                      </div>
+
+                      {/* Subordinate node wrapper with spacing */}
+                      <div className="px-3">
+                        {renderTreeNode(reportEmp, depth + 1)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -605,9 +623,9 @@ export const OrganizationalStructure: React.FC = () => {
           )}
 
           {/* SECTION 2: THE FOCAL USER CARD (YOU / SELECTED) */}
-          <div className="bg-linear-to-r from-blue-900 to-indigo-900 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden border border-slate-800">
             {/* Background watermarks */}
-            <div className="absolute right-0 top-0 bottom-0 w-96 bg-radial from-blue-500/10 to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-96 bg-gradient-to-l from-blue-500/20 to-transparent pointer-events-none" />
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-5">
